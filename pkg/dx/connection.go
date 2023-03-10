@@ -1,19 +1,18 @@
 package dx
 
 import (
-	"encoding/json"
 	"net/http"
 )
 
 // CreateConnectionRequest is the request body for CreateConnection
 type CreateConnectionRequest struct {
-	Bandwidth      string `json:"bandwidth"`
-	ConnectionName string `json:"connectionName"`
-	LagId          string `json:"lagId"`
-	Location       string `json:"location"`
-	ProviderName   string `json:"providerName"`
-	RequestMACSec  bool   `json:"requestMACSec"`
-	Action         string `json:"Action"`
+	Bandwidth      string             `json:"bandwidth"`
+	ConnectionName string             `json:"connectionName"`
+	LagId          string             `json:"lagId"`
+	Location       string             `json:"location"`
+	ProviderName   string             `json:"providerName"`
+	RequestMACSec  bool               `json:"requestMACSec"`
+	Tags           []DirectConnectTag `json:"tags"`
 }
 
 // CreateConnectionResponse is the response body for CreateConnection
@@ -55,73 +54,90 @@ type DescribeConnectionsRequest struct {
 	ConnectionId string `json:"connectionId"`
 }
 
+type DeleteConnectionRequest struct {
+	ConnectionId string `json:"connectionId"`
+}
+
 // DescribeConnectionsResponse is the response body for DescribeConnections
 type DescribeConnectionsResponse struct {
 	Connections []CreateConnectionResponse `json:"connections"`
 }
 
-func NewCreateConnectionResponse(dx CreateConnectionRequest) *CreateConnectionResponse {
-	return &CreateConnectionResponse{
-		AwsDevice:            "123",
-		AwsDeviceV2:          "123",
-		AwsLogicalDeviceId:   "123",
-		Bandwidth:            dx.Bandwidth,
-		ConnectionId:         "dxcon-1234567890",
-		ConnectionName:       dx.ConnectionName,
-		ConnectionState:      "available",
-		EncryptionMode:       "no_encrypt",
-		HasLogicalRedundancy: "yes",
-		JumboFrameCapable:    false,
-		LagId:                dx.LagId,
-		LoaIssueTime:         0,
-		Location:             dx.Location,
-		MacSecCapable:        false,
-		MacSecKeys:           nil,
-		OwnerAccount:         "123",
-		PartnerName:          "p1",
-		PortEncryptionStatus: "Encryption Down",
-		ProviderName:         "p1",
-		Region:               "us-east-1",
-		Tags:                 nil,
-		Vlan:                 123,
-	}
+type UpdateConnectionRequest struct {
+	ConnectionId   string `json:"connectionId"`
+	ConnectionName string `json:"connectionName"`
+	EncryptionMode string `json:"encryptionMode"`
 }
 
-func CreateConnection(r *http.Request) (*CreateConnectionResponse, error) {
+func CreateConnection(r *http.Request) (CreateConnectionResponse, error) {
 	var dx CreateConnectionRequest
+	var dc CreateConnectionResponse
 
 	// Unmarshal the body
 	err := RequestToJson(r, &dx)
 	if err != nil {
-		return nil, err
+		return dc, err
 	}
 
-	// Return a response
-	return NewCreateConnectionResponse(dx), nil
+	// Assign the values
+	dc.Bandwidth = dx.Bandwidth
+	dc.ConnectionId = CreateConnectionID()
+	dc.ConnectionName = dx.ConnectionName
+	dc.ConnectionState = "available"
+	dc.Location = dx.Location
+	dc.ProviderName = dx.ProviderName
+	dc.Tags = dx.Tags
+
+	return dc, nil
 }
 
-func RequestToJson(r *http.Request, v interface{}) error {
-	// Unmarshal the body
-	err := json.NewDecoder(r.Body).Decode(&v)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func DescribeConnections(r *http.Request, dx *CreateConnectionResponse) (*DescribeConnectionsResponse, error) {
+func DescribeConnections(r *http.Request, dx CreateConnectionResponse) (DescribeConnectionsResponse, error) {
 	var request DescribeConnectionsRequest
+	var response DescribeConnectionsResponse
+	// Unmarshal the body
+	err := RequestToJson(r, &request)
+	if err != nil {
+		return response, err
+	}
+
+	response = DescribeConnectionsResponse{
+		Connections: []CreateConnectionResponse{dx},
+	}
+
+	return response, nil
+}
+
+func UpdateConnection(r *http.Request, dx *CreateConnectionResponse) error {
+	var request UpdateConnectionRequest
 
 	// Unmarshal the body
 	err := RequestToJson(r, &request)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	response := DescribeConnectionsResponse{
-		Connections: []CreateConnectionResponse{*dx},
+	dx.ConnectionName = request.ConnectionName
+	dx.EncryptionMode = request.EncryptionMode
+
+	return nil
+}
+
+func DeleteConnection(r *http.Request, dx *CreateConnectionResponse) error {
+	var request DeleteConnectionRequest
+
+	// Unmarshal the body
+	err := RequestToJson(r, &request)
+	if err != nil {
+		return err
 	}
 
-	return &response, nil
+	dx.ConnectionState = "deleted"
+
+	return nil
+}
+
+// CreateConnectionID generates a random connection ID
+// The ID is prefixed with "dxcon-" followed by 8 random characters
+func CreateConnectionID() string {
+	return "dxcon-" + randomString(8)
 }

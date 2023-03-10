@@ -9,7 +9,7 @@ import (
 	d "dx-mock/pkg/dx"
 )
 
-var dx *d.CreateConnectionResponse
+var dx d.CreateConnectionResponse
 
 func handleRequest(w http.ResponseWriter, r *http.Request) {
 	// Get the Content-Type
@@ -51,6 +51,26 @@ func handleRequest(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		json.NewEncoder(w).Encode(response)
+		return
+	case "OvertureService.DeleteConnection":
+		err := d.DeleteConnection(r, &dx)
+		if err != nil {
+			http.Error(w, "Bad request", http.StatusBadRequest)
+			return
+		}
+
+		json.NewEncoder(w).Encode(dx)
+
+		return
+	case "OvertureService.UpdateConnection":
+		err := d.UpdateConnection(r, &dx)
+		if err != nil {
+			http.Error(w, "Bad request", http.StatusBadRequest)
+			return
+		}
+
+		json.NewEncoder(w).Encode(dx)
+
 		return
 	}
 }
