@@ -6,10 +6,14 @@ import (
 	"log"
 	"net/http"
 
+	"dx-mock/adapters/db"
 	d "dx-mock/pkg/dx"
 )
 
-var dx d.CreateConnectionResponse
+var (
+	dx               d.CreateConnectionResponse
+	dbNameConnection = "connection"
+)
 
 func handleRequest(w http.ResponseWriter, r *http.Request) {
 	// Get the Content-Type
@@ -27,6 +31,28 @@ func handleRequest(w http.ResponseWriter, r *http.Request) {
 		dx, err = d.CreateConnection(r)
 		if err != nil {
 			http.Error(w, "Bad request", http.StatusBadRequest)
+			return
+		}
+		connectionDB, err := db.NewAdapter(dbNameConnection)
+		if err != nil {
+			log.Println("Error in creating connection to database", err)
+			http.Error(w, "Database Connection failure", http.StatusInternalServerError)
+			return
+		}
+		defer connectionDB.CloseDbConnection()
+		// Serialize the struct
+
+		b, err := json.Marshal(dx)
+		if err != nil {
+			log.Println("Error serializing data", err)
+			http.Error(w, "Internal Error", http.StatusInternalServerError)
+			return
+		}
+
+		err = connectionDB.SetVal(dx.ConnectionId, b)
+		if err != nil {
+			log.Println("Error in creating connection to database", err)
+			http.Error(w, "Database Connection failure", http.StatusInternalServerError)
 			return
 		}
 		// Return a response
