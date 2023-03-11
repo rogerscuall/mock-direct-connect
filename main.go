@@ -75,11 +75,39 @@ func handleRequest(w http.ResponseWriter, r *http.Request) {
 
 		return
 	case "DescribeConnections":
-		response, err := d.DescribeConnections(r, dx)
+		request, err := d.DescribeConnections(r)
 		if err != nil {
 			http.Error(w, "Bad request", http.StatusBadRequest)
 			return
 		}
+		connectionDB, err := db.NewAdapter(dbNameConnection)
+		if err != nil {
+			log.Println("Error in creating connection to database", err)
+			http.Error(w, "Database Connection failure", http.StatusInternalServerError)
+			return
+		}
+		defer connectionDB.CloseDbConnection()
+
+		response := d.DescribeConnectionsResponse{
+			Connections: []d.CreateConnectionResponse{},
+		}
+
+		// Find the connection in the database
+		val, err := connectionDB.GetVal(request.ConnectionId)
+		if err != nil {
+			log.Println("Error in getting connection ID from database", err)
+			json.NewEncoder(w).Encode(response)
+		}
+
+		// Unmarshal the data
+		err = json.Unmarshal(val, &dx)
+		if err != nil {
+			log.Println("Error in unmarshalling data", err)
+			http.Error(w, "Internal Error", http.StatusInternalServerError)
+			return
+		}
+
+		response.Connections = append(response.Connections, dx)
 		json.NewEncoder(w).Encode(response)
 
 		return

@@ -91,20 +91,20 @@ func CreateConnection(r *http.Request) (CreateConnectionResponse, error) {
 	return dc, nil
 }
 
-func DescribeConnections(r *http.Request, dx CreateConnectionResponse) (DescribeConnectionsResponse, error) {
+func DescribeConnections(r *http.Request) (DescribeConnectionsRequest, error) {
 	var request DescribeConnectionsRequest
-	var response DescribeConnectionsResponse
+	//var response DescribeConnectionsResponse
 	// Unmarshal the body
 	err := RequestToJson(r, &request)
 	if err != nil {
-		return response, err
+		return request, err
 	}
+	return request, nil
 
-	response = DescribeConnectionsResponse{
-		Connections: []CreateConnectionResponse{dx},
-	}
+	// response = DescribeConnectionsResponse{
+	// 	Connections: []CreateConnectionResponse{dx},
+	// }
 
-	return response, nil
 }
 
 func UpdateConnection(r *http.Request, dx *CreateConnectionResponse) error {
