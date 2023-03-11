@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strings"
 
 	"dx-mock/adapters/db"
 	d "dx-mock/pkg/dx"
@@ -22,10 +23,22 @@ func handleRequest(w http.ResponseWriter, r *http.Request) {
 		log.Println("Content-Type is not application/x-amz-json-1.1")
 	}
 	// Get the target
-	target := r.Header.Get("X-Amz-Target")
-	log.Println("X-Amz-Target is ", target)
-	switch target {
-	case "OvertureService.CreateConnection":
+	serviceAction := strings.Split(r.Header.Get("X-Amz-Target"), ".")
+	if len(serviceAction) != 2 {
+		log.Println("X-Amz-Target is not in the correct format")
+		http.Error(w, "Bad request", http.StatusBadRequest)
+		return
+	}
+	service := serviceAction[0]
+	if service != "OvertureService" {
+		log.Println("Service is not OvertureService")
+		http.Error(w, "Bad request", http.StatusBadRequest)
+		return
+	}
+	action := serviceAction[1]
+	log.Println("Request for: ", action)
+	switch action {
+	case "CreateConnection":
 		var err error
 
 		dx, err = d.CreateConnection(r)
@@ -61,7 +74,7 @@ func handleRequest(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode(dx)
 
 		return
-	case "OvertureService.DescribeConnections":
+	case "DescribeConnections":
 		response, err := d.DescribeConnections(r, dx)
 		if err != nil {
 			http.Error(w, "Bad request", http.StatusBadRequest)
@@ -70,7 +83,7 @@ func handleRequest(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode(response)
 
 		return
-	case "OvertureService.DescribeTags":
+	case "DescribeTags":
 		response, err := d.DescribeTags(r)
 		if err != nil {
 			http.Error(w, "Bad request", http.StatusBadRequest)
@@ -78,7 +91,7 @@ func handleRequest(w http.ResponseWriter, r *http.Request) {
 		}
 		json.NewEncoder(w).Encode(response)
 		return
-	case "OvertureService.DeleteConnection":
+	case "DeleteConnection":
 		err := d.DeleteConnection(r, &dx)
 		if err != nil {
 			http.Error(w, "Bad request", http.StatusBadRequest)
@@ -88,7 +101,7 @@ func handleRequest(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode(dx)
 
 		return
-	case "OvertureService.UpdateConnection":
+	case "UpdateConnection":
 		err := d.UpdateConnection(r, &dx)
 		if err != nil {
 			http.Error(w, "Bad request", http.StatusBadRequest)
