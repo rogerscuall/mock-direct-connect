@@ -1,6 +1,9 @@
 package dx
 
-import "net/http"
+import (
+	"fmt"
+	"net/http"
+)
 
 // DescribeTagsRequest is the request body for DescribeTags
 type DescribeTagsRequest struct {
@@ -12,11 +15,8 @@ type DescribeTagsResponse struct {
 }
 
 type ResourceTag struct {
-	ResourceArn string `json:"resourceArn"`
-	Tags        []struct {
-		Key   string `json:"key"`
-		Value string `json:"value"`
-	} `json:"tags"`
+	ResourceArn string             `json:"resourceArn"`
+	Tags        []DirectConnectTag `json:"tags"`
 }
 
 type DirectConnectTag struct {
@@ -24,21 +24,34 @@ type DirectConnectTag struct {
 	Value string `json:"value"`
 }
 
-func DescribeTags(r *http.Request) (*DescribeTagsResponse, error) {
+func DescribeTags(r *http.Request) (DescribeTagsRequest, error) {
 	var request DescribeTagsRequest
 
 	// Unmarshal the body
 	err := RequestToJson(r, &request)
 	if err != nil {
-		return nil, err
+		return request, err
 	}
 
-	response := DescribeTagsResponse{
-		ResourceTags: []ResourceTag{
-			{
-				ResourceArn: "arn:aws:directconnect:us-east-1:1234567890:dxcon-1234567890",
-			},
-		},
+	if len(request.ResourceArns) == 0 {
+		return request, fmt.Errorf("ResourceArns is empty")
 	}
-	return &response, nil
+
+	return request, nil
+}
+
+func TagResource(r *http.Request) error {
+	var request DirectConnectTag
+
+	// Unmarshal the body
+	err := RequestToJson(r, &request)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func CreateARN(region, id string) string {
+	return fmt.Sprintf("arn:aws:directconnect:%s:123456789012:dxcon/%s", region, id)
 }

@@ -7,13 +7,13 @@ import (
 	"net/http"
 	"strings"
 
-	"dx-mock/adapters/db"
 	d "dx-mock/pkg/dx"
 )
 
 var (
 	dx               d.CreateConnectionResponse
 	dbNameConnection = "connection"
+	dbNameTags       = "tags"
 )
 
 func handleRequest(w http.ResponseWriter, r *http.Request) {
@@ -39,86 +39,11 @@ func handleRequest(w http.ResponseWriter, r *http.Request) {
 	log.Println("Request for: ", action)
 	switch action {
 	case "CreateConnection":
-		var err error
-
-		dx, err = d.CreateConnection(r)
-		if err != nil {
-			http.Error(w, "Bad request", http.StatusBadRequest)
-			return
-		}
-		connectionDB, err := db.NewAdapter(dbNameConnection)
-		if err != nil {
-			log.Println("Error in creating connection to database", err)
-			http.Error(w, "Database Connection failure", http.StatusInternalServerError)
-			return
-		}
-		defer connectionDB.CloseDbConnection()
-		// Serialize the struct
-
-		b, err := json.Marshal(dx)
-		if err != nil {
-			log.Println("Error serializing data", err)
-			http.Error(w, "Internal Error", http.StatusInternalServerError)
-			return
-		}
-
-		err = connectionDB.SetVal(dx.ConnectionId, b)
-		if err != nil {
-			log.Println("Error in creating connection to database", err)
-			http.Error(w, "Database Connection failure", http.StatusInternalServerError)
-			return
-		}
-		// Return a response
-		w.WriteHeader(http.StatusOK)
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(dx)
-
-		return
+		CreateConnection(w, r)
 	case "DescribeConnections":
-		request, err := d.DescribeConnections(r)
-		if err != nil {
-			http.Error(w, "Bad request", http.StatusBadRequest)
-			return
-		}
-		connectionDB, err := db.NewAdapter(dbNameConnection)
-		if err != nil {
-			log.Println("Error in creating connection to database", err)
-			http.Error(w, "Database Connection failure", http.StatusInternalServerError)
-			return
-		}
-		defer connectionDB.CloseDbConnection()
-
-		response := d.DescribeConnectionsResponse{
-			Connections: []d.CreateConnectionResponse{},
-		}
-
-		// Find the connection in the database
-		val, err := connectionDB.GetVal(request.ConnectionId)
-		if err != nil {
-			log.Println("Error in getting connection ID from database", err)
-			json.NewEncoder(w).Encode(response)
-		}
-
-		// Unmarshal the data
-		err = json.Unmarshal(val, &dx)
-		if err != nil {
-			log.Println("Error in unmarshalling data", err)
-			http.Error(w, "Internal Error", http.StatusInternalServerError)
-			return
-		}
-
-		response.Connections = append(response.Connections, dx)
-		json.NewEncoder(w).Encode(response)
-
-		return
+		DescribeConnections(w, r)
 	case "DescribeTags":
-		response, err := d.DescribeTags(r)
-		if err != nil {
-			http.Error(w, "Bad request", http.StatusBadRequest)
-			return
-		}
-		json.NewEncoder(w).Encode(response)
-		return
+		DescribeTags(w, r)
 	case "DeleteConnection":
 		err := d.DeleteConnection(r, &dx)
 		if err != nil {
