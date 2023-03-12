@@ -40,16 +40,16 @@ func DescribeTags(r *http.Request) (DescribeTagsRequest, error) {
 	return request, nil
 }
 
-func TagResource(r *http.Request) error {
-	var request DirectConnectTag
+func TagResource(r *http.Request) (ResourceTag, error) {
+	var request ResourceTag
 
 	// Unmarshal the body
 	err := RequestToJson(r, &request)
 	if err != nil {
-		return err
+		return request, err
 	}
 
-	return nil
+	return request, nil
 }
 
 func CreateARN(region, id string) string {

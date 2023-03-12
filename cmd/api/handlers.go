@@ -71,7 +71,6 @@ func CreateConnection(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(dx)
-
 }
 
 func DescribeConnections(w http.ResponseWriter, r *http.Request) {
@@ -151,4 +150,43 @@ func DescribeTags(w http.ResponseWriter, r *http.Request) {
 	}
 
 	json.NewEncoder(w).Encode(response)
+}
+
+func TagResource(w http.ResponseWriter, r *http.Request) {
+	resourceTag, err := d.TagResource(r)
+	if err != nil {
+		http.Error(w, "Bad request", http.StatusBadRequest)
+		return
+	}
+
+	connectionDB, err := db.NewAdapter(dbNameTags)
+	if err != nil {
+		log.Println("Error in creating connection to database", err)
+		http.Error(w, "Database Connection failure", http.StatusInternalServerError)
+		return
+	}
+	defer connectionDB.CloseDbConnection()
+
+	b, err := json.Marshal(resourceTag)
+	if err != nil {
+		log.Println("Error serializing data", err)
+		http.Error(w, "Internal Error", http.StatusInternalServerError)
+		return
+	}
+
+	key, err := d.GetIDFromARN(resourceTag.ResourceArn)
+	if err != nil {
+		log.Println("Error in getting key from ARN", err)
+		http.Error(w, "Internal Error", http.StatusInternalServerError)
+		return
+	}
+
+	err = connectionDB.SetVal(key, b)
+	if err != nil {
+		log.Println("Error in creating connection to database", err)
+		http.Error(w, "Database Connection failure", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
 }

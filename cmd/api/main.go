@@ -64,6 +64,8 @@ func handleRequest(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode(dx)
 
 		return
+	case "TagResource":
+		TagResource(w, r)
 	}
 }
 
