@@ -22,28 +22,23 @@ type ResourceTag struct {
 
 // Implement the Marshaler interface
 func (r ResourceTag) MarshalJSON() ([]byte, error) {
-	var Alias struct {
-		ResourceArn string             `json:"resourceArn"`
-		Tags        []DirectConnectTag `json:"tags"`
-	}
-	Alias.ResourceArn = r.ResourceArn
-	Alias.Tags = r.Tags
-	return json.Marshal(&Alias)
+	type Alias ResourceTag
+	return json.Marshal(&struct {
+		*Alias
+	}{
+		Alias: (*Alias)(&r),
+	})
 }
 
 // Implement the Unmarshaler interface
 func (r *ResourceTag) UnmarshalJSON(b []byte) error {
-	var Alias struct {
-		ResourceArn string             `json:"resourceArn"`
-		Tags        []DirectConnectTag `json:"tags"`
+	type Alias ResourceTag
+	aux := &struct {
+		*Alias
+	}{
+		Alias: (*Alias)(r),
 	}
-	err := json.Unmarshal(b, &Alias)
-	if err != nil {
-		return err
-	}
-	r.ResourceArn = Alias.ResourceArn
-	r.Tags = Alias.Tags
-	return nil
+	return json.Unmarshal(b, &aux)
 }
 
 type DirectConnectTag struct {
