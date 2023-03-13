@@ -1,6 +1,7 @@
 package dx
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 )
@@ -17,6 +18,32 @@ type DescribeTagsResponse struct {
 type ResourceTag struct {
 	ResourceArn string             `json:"resourceArn"`
 	Tags        []DirectConnectTag `json:"tags"`
+}
+
+// Implement the Marshaler interface
+func (r ResourceTag) MarshalJSON() ([]byte, error) {
+	var Alias struct {
+		ResourceArn string             `json:"resourceArn"`
+		Tags        []DirectConnectTag `json:"tags"`
+	}
+	Alias.ResourceArn = r.ResourceArn
+	Alias.Tags = r.Tags
+	return json.Marshal(&Alias)
+}
+
+// Implement the Unmarshaler interface
+func (r *ResourceTag) UnmarshalJSON(b []byte) error {
+	var Alias struct {
+		ResourceArn string             `json:"resourceArn"`
+		Tags        []DirectConnectTag `json:"tags"`
+	}
+	err := json.Unmarshal(b, &Alias)
+	if err != nil {
+		return err
+	}
+	r.ResourceArn = Alias.ResourceArn
+	r.Tags = Alias.Tags
+	return nil
 }
 
 type DirectConnectTag struct {

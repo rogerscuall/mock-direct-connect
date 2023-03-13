@@ -1,6 +1,7 @@
 package dx
 
 import (
+	"encoding/json"
 	"net/http"
 )
 
@@ -15,8 +16,11 @@ type CreateConnectionRequest struct {
 	Tags           []DirectConnectTag `json:"tags"`
 }
 
-// CreateConnectionResponse is the response body for CreateConnection
-type CreateConnectionResponse struct {
+// Connection is the response body for CreateConnection
+// It is equivalent to Response of the action CreateConnection.
+// https://docs.aws.amazon.com/directconnect/latest/APIReference/API_CreateConnection.html
+
+type Connection struct {
 	AwsDevice            string             `json:"awsDevice"`
 	AwsDeviceV2          string             `json:"awsDeviceV2"`
 	AwsLogicalDeviceId   string             `json:"awsLogicalDeviceId"`
@@ -41,6 +45,27 @@ type CreateConnectionResponse struct {
 	Vlan                 int                `json:"vlan"`
 }
 
+// Implementing the Marshaler interface
+func (c Connection) MarshalJSON() ([]byte, error) {
+	type Alias Connection
+	return json.Marshal(&struct {
+		*Alias
+	}{
+		Alias: (*Alias)(&c),
+	})
+}
+
+// Implementing the Unmarshaler interface
+func (c *Connection) UnmarshalJSON(b []byte) error {
+	type Alias Connection
+	aux := &struct {
+		*Alias
+	}{
+		Alias: (*Alias)(c),
+	}
+	return json.Unmarshal(b, &aux)
+}
+
 // DirectConnectKey is the key for MACSec used by CreateConnectionResponse
 type DirectConnectKey struct {
 	Ckn       string `json:"ckn"`
@@ -60,7 +85,7 @@ type DeleteConnectionRequest struct {
 
 // DescribeConnectionsResponse is the response body for DescribeConnections
 type DescribeConnectionsResponse struct {
-	Connections []CreateConnectionResponse `json:"connections"`
+	Connections []Connection `json:"connections"`
 }
 
 type UpdateConnectionRequest struct {
@@ -69,9 +94,9 @@ type UpdateConnectionRequest struct {
 	EncryptionMode string `json:"encryptionMode"`
 }
 
-func CreateConnection(r *http.Request) (CreateConnectionResponse, error) {
+func CreateConnection(r *http.Request) (Connection, error) {
 	var dx CreateConnectionRequest
-	var dc CreateConnectionResponse
+	var dc Connection
 
 	// Unmarshal the body
 	err := RequestToJson(r, &dx)
@@ -107,7 +132,7 @@ func DescribeConnections(r *http.Request) (DescribeConnectionsRequest, error) {
 
 }
 
-func UpdateConnection(r *http.Request, dx *CreateConnectionResponse) error {
+func UpdateConnection(r *http.Request, dx *Connection) error {
 	var request UpdateConnectionRequest
 
 	// Unmarshal the body
@@ -122,7 +147,7 @@ func UpdateConnection(r *http.Request, dx *CreateConnectionResponse) error {
 	return nil
 }
 
-func DeleteConnection(r *http.Request, dx *CreateConnectionResponse) error {
+func DeleteConnection(r *http.Request, dx *Connection) error {
 	var request DeleteConnectionRequest
 
 	// Unmarshal the body

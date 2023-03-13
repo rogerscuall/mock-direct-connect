@@ -25,14 +25,7 @@ func CreateConnection(w http.ResponseWriter, r *http.Request) {
 	defer connectionDB.CloseDbConnection()
 	// Serialize the struct
 
-	b, err := json.Marshal(dx)
-	if err != nil {
-		log.Println("Error serializing data", err)
-		http.Error(w, "Internal Error", http.StatusInternalServerError)
-		return
-	}
-
-	err = connectionDB.SetVal(dx.ConnectionId, b)
+	err = connectionDB.SetVal(dx.ConnectionId, &dx)
 	if err != nil {
 		log.Println("Error in creating connection to database", err)
 		http.Error(w, "Database Connection failure", http.StatusInternalServerError)
@@ -53,14 +46,7 @@ func CreateConnection(w http.ResponseWriter, r *http.Request) {
 	}
 	defer tagDB.CloseDbConnection()
 
-	b, err = json.Marshal(resourceTag)
-	if err != nil {
-		log.Println("Error serializing data", err)
-		http.Error(w, "Internal Error", http.StatusInternalServerError)
-		return
-	}
-
-	err = tagDB.SetVal(dx.ConnectionId, b)
+	err = tagDB.SetVal(dx.ConnectionId, resourceTag)
 	if err != nil {
 		log.Println("Error in creating connection to database", err)
 		http.Error(w, "Database Connection failure", http.StatusInternalServerError)
@@ -88,22 +74,15 @@ func DescribeConnections(w http.ResponseWriter, r *http.Request) {
 	defer connectionDB.CloseDbConnection()
 
 	response := d.DescribeConnectionsResponse{
-		Connections: []d.CreateConnectionResponse{},
+		Connections: []d.Connection{},
 	}
 
-	// Find the connection in the database
-	val, err := connectionDB.GetVal(request.ConnectionId)
+	// Find the Connection in the database
+	var dx d.Connection
+	err = connectionDB.GetVal(request.ConnectionId, &dx)
 	if err != nil {
 		log.Println("Error in getting connection ID from database", err)
 		json.NewEncoder(w).Encode(response)
-	}
-
-	// Unmarshal the data
-	err = json.Unmarshal(val, &dx)
-	if err != nil {
-		log.Println("Error in unmarshalling data", err)
-		http.Error(w, "Internal Error", http.StatusInternalServerError)
-		return
 	}
 
 	response.Connections = append(response.Connections, dx)
@@ -126,7 +105,6 @@ func DescribeTags(w http.ResponseWriter, r *http.Request) {
 	defer connectionDB.CloseDbConnection()
 
 	response := d.DescribeTagsResponse{}
-	resourceTag := d.ResourceTag{}
 
 	for _, resourceARN := range request.ResourceArns {
 		key, err := d.GetIDFromARN(resourceARN)
@@ -135,23 +113,20 @@ func DescribeTags(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "Internal Error", http.StatusInternalServerError)
 			return
 		}
-		val, err := connectionDB.GetVal(key)
+		resourceTag := d.ResourceTag{}
+		err = connectionDB.GetVal(key, &resourceTag)
 		if err != nil {
 			log.Println("Value not found in database", err)
 			continue
 		}
-		err = json.Unmarshal(val, &resourceTag)
-		if err != nil {
-			log.Println("Error in unmarshalling data", err)
-			http.Error(w, "Internal Error", http.StatusInternalServerError)
-			return
-		}
+
 		response.ResourceTags = append(response.ResourceTags, resourceTag)
 	}
 
 	json.NewEncoder(w).Encode(response)
 }
 
+// TagResource tags a resource
 func TagResource(w http.ResponseWriter, r *http.Request) {
 	resourceTag, err := d.TagResource(r)
 	if err != nil {
@@ -167,13 +142,6 @@ func TagResource(w http.ResponseWriter, r *http.Request) {
 	}
 	defer connectionDB.CloseDbConnection()
 
-	b, err := json.Marshal(resourceTag)
-	if err != nil {
-		log.Println("Error serializing data", err)
-		http.Error(w, "Internal Error", http.StatusInternalServerError)
-		return
-	}
-
 	key, err := d.GetIDFromARN(resourceTag.ResourceArn)
 	if err != nil {
 		log.Println("Error in getting key from ARN", err)
@@ -181,7 +149,7 @@ func TagResource(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = connectionDB.SetVal(key, b)
+	err = connectionDB.SetVal(key, resourceTag)
 	if err != nil {
 		log.Println("Error in creating connection to database", err)
 		http.Error(w, "Database Connection failure", http.StatusInternalServerError)

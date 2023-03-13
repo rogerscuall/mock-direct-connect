@@ -1,6 +1,7 @@
 package db
 
 import (
+	"encoding/json"
 	"log"
 
 	"github.com/charmbracelet/charm/kv"
@@ -28,13 +29,34 @@ func (da Adapter) CloseDbConnection() {
 	}
 }
 
-func (da Adapter) GetVal(key string) ([]byte, error) {
+// GetVal will update the struct s with the value from the DB
+// It will return an error.
+func (da Adapter) GetVal(key string, s json.Unmarshaler) error {
 	val, err := da.db.Get([]byte(key))
 	if err != nil {
-		return []byte{}, err
+		return err
 	}
-	return val, nil
+	err = s.UnmarshalJSON(val)
+	if err != nil {
+		return err
+	}
+	return nil
 }
+
+// SetVal will set the value of the key in the DB
+// It will return an error.
+func (da Adapter) SetVal(key string, s json.Marshaler) error {
+	val, err := s.MarshalJSON()
+	if err != nil {
+		return err
+	}
+	err = da.db.Set([]byte(key), val)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 
 func (da Adapter) Sync() {
 	err := da.db.Sync()
@@ -43,10 +65,4 @@ func (da Adapter) Sync() {
 	}
 }
 
-func (da Adapter) SetVal(key string, val []byte) error {
-	err := da.db.Set([]byte(key), val)
-	if err != nil {
-		return err
-	}
-	return nil
-}
+

@@ -1,7 +1,11 @@
 package ports
 
+import (
+	"encoding/json"
+)
+
 type DbPort interface {
 	CloseDbConnection()
-	GetVal(key string) ([]byte, error)
-	SetVal(key string, val []byte) error
+	GetVal(string, json.Unmarshaler) ([]byte, error)
+	SetVal(string, json.Marshaler) error
 }

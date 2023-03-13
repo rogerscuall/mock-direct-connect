@@ -11,7 +11,7 @@ import (
 )
 
 var (
-	dx               d.CreateConnectionResponse
+	dx               d.Connection
 	dbNameConnection = "connection"
 	dbNameTags       = "tags"
 )
