@@ -14,6 +14,7 @@ var (
 	dx               d.Connection
 	dbNameConnection = "connection"
 	dbNameTags       = "tags"
+	dbNameDXGwy      = "dxgwys"
 )
 
 func handleRequest(w http.ResponseWriter, r *http.Request) {
@@ -66,6 +67,14 @@ func handleRequest(w http.ResponseWriter, r *http.Request) {
 		return
 	case "TagResource":
 		TagResource(w, r)
+	case "CreateDirectConnectGateway":
+		CreateDXGateway(w, r)
+	case "DescribeDirectConnectGateways":
+		DescribeDXGateways(w, r)
+	case "UpdateDirectConnectGateway":
+		UpdateDXGateway(w, r)
+	case "DeleteDirectConnectGateway":
+		DeleteDXGateway(w, r)
 	}
 }
 

@@ -9,9 +9,7 @@ import (
 )
 
 func CreateConnection(w http.ResponseWriter, r *http.Request) {
-	var err error
-
-	dx, err = d.CreateConnection(r)
+	dx, err := d.CreateConnection(r)
 	if err != nil {
 		http.Error(w, "Bad request", http.StatusBadRequest)
 		return
@@ -54,9 +52,7 @@ func CreateConnection(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Return a response
-	w.WriteHeader(http.StatusOK)
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(dx)
+	returnOk(w, dx)
 }
 
 func DescribeConnections(w http.ResponseWriter, r *http.Request) {
@@ -150,6 +146,151 @@ func TagResource(w http.ResponseWriter, r *http.Request) {
 	}
 
 	err = connectionDB.SetVal(key, resourceTag)
+	if err != nil {
+		log.Println("Error in creating connection to database", err)
+		http.Error(w, "Database Connection failure", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+}
+
+// CreateDXGateway creates a Direct Connect Gateway.
+// Updates the DB.
+func CreateDXGateway(w http.ResponseWriter, r *http.Request) {
+	g, err := d.CreateDXGateway(r)
+	if err != nil {
+		http.Error(w, "Bad request", http.StatusBadRequest)
+		return
+	}
+
+	dxgwDB, err := db.NewAdapter(dbNameDXGwy)
+	if err != nil {
+		log.Println("Error in creating connection to database", err)
+		http.Error(w, "Database Connection failure", http.StatusInternalServerError)
+		return
+	}
+	defer dxgwDB.CloseDbConnection()
+
+	err = dxgwDB.SetVal(g.DirectConnectGatewayId, g)
+	if err != nil {
+		log.Println("Error in creating connection to database", err)
+		http.Error(w, "Database Connection failure", http.StatusInternalServerError)
+		return
+	}
+
+	response := struct {
+		DirectConnectGateway d.DXGateway `json:"directConnectGateway"`
+	}{
+		DirectConnectGateway: g,
+	}
+
+	returnOk(w, response)
+}
+
+// DescribeDXGateways returns a list of Direct Connect Gateways.
+// DXGWYs in deleted state are not returned.
+func DescribeDXGateways(w http.ResponseWriter, r *http.Request) {
+	request, err := d.DescribeDXGateways(r)
+	if err != nil {
+		http.Error(w, "Bad request", http.StatusBadRequest)
+		return
+	}
+
+	dxgwDB, err := db.NewAdapter(dbNameDXGwy)
+	if err != nil {
+		log.Println("Error in creating connection to database", err)
+		http.Error(w, "Database Connection failure", http.StatusInternalServerError)
+		return
+	}
+	defer dxgwDB.CloseDbConnection()
+
+	response := d.DescribeDXGatewaysResponse{
+		DirectConnectGateways: []d.DXGateway{},
+	}
+
+	var g d.DXGateway
+	err = dxgwDB.GetVal(request.DirectConnectGatewayId, &g)
+	if err != nil {
+		log.Println("Error in getting connection ID from database", err)
+	}
+	if g.DirectConnectGatewayState != "deleted" {
+		response.DirectConnectGateways = append(response.DirectConnectGateways, g)
+	}
+
+	returnOk(w, response)
+}
+
+// UpdateDXGateway updates a Direct Connect Gateway.
+// Updates the DB.
+func UpdateDXGateway(w http.ResponseWriter, r *http.Request) {
+	request, err := d.UpdateDXGateway(r)
+	if err != nil {
+		http.Error(w, "Bad request", http.StatusBadRequest)
+		return
+	}
+
+	dxgwDB, err := db.NewAdapter(dbNameDXGwy)
+	if err != nil {
+		log.Println("Error in creating connection to database", err)
+		http.Error(w, "Database Connection failure", http.StatusInternalServerError)
+		return
+	}
+	defer dxgwDB.CloseDbConnection()
+
+	var g d.DXGateway
+	err = dxgwDB.GetVal(request.DirectConnectGatewayId, &g)
+	if err != nil {
+		log.Println("Error in getting connection ID from database", err)
+		http.Error(w, "Internal Error", http.StatusInternalServerError)
+		return
+	}
+
+	g.DirectConnectGatewayName = request.NewDirectConnectGatewayName
+
+	err = dxgwDB.SetVal(request.DirectConnectGatewayId, g)
+	if err != nil {
+		log.Println("Error in creating connection to database", err)
+		http.Error(w, "Database Connection failure", http.StatusInternalServerError)
+		return
+	}
+
+	response := struct {
+		DirectConnectGateway d.DXGateway `json:"directConnectGateway"`
+	}{
+		DirectConnectGateway: g,
+	}
+
+	returnOk(w, response)
+}
+
+// DeleteDXGateway deletes a Direct Connect Gateway.
+func DeleteDXGateway(w http.ResponseWriter, r *http.Request) {
+	request, err := d.DeleteDXGateway(r)
+	if err != nil {
+		http.Error(w, "Bad request", http.StatusBadRequest)
+		return
+	}
+
+	dxgwDB, err := db.NewAdapter(dbNameDXGwy)
+	if err != nil {
+		log.Println("Error in creating connection to database", err)
+		http.Error(w, "Database Connection failure", http.StatusInternalServerError)
+		return
+	}
+	defer dxgwDB.CloseDbConnection()
+
+	var g d.DXGateway
+	err = dxgwDB.GetVal(request.DirectConnectGatewayId, &g)
+	if err != nil {
+		log.Println("Error in getting connection ID from database", err)
+		http.Error(w, "Internal Error", http.StatusInternalServerError)
+		return
+	}
+
+	g.DirectConnectGatewayState = "deleted"
+
+	err = dxgwDB.SetVal(request.DirectConnectGatewayId, g)
 	if err != nil {
 		log.Println("Error in creating connection to database", err)
 		http.Error(w, "Database Connection failure", http.StatusInternalServerError)
