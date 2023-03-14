@@ -125,11 +125,6 @@ func DescribeConnections(r *http.Request) (DescribeConnectionsRequest, error) {
 		return request, err
 	}
 	return request, nil
-
-	// response = DescribeConnectionsResponse{
-	// 	Connections: []CreateConnectionResponse{dx},
-	// }
-
 }
 
 func UpdateConnection(r *http.Request, dx *Connection) error {
