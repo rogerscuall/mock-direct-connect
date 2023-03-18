@@ -1,6 +1,10 @@
 package dx
 
-import "encoding/json"
+import (
+	"encoding/json"
+	"fmt"
+	"net/http"
+)
 
 // CreatePrivateVirtualInterfaceRequest is the request body for CreatePrivateVirtualInterface
 type CreatePrivateVirtualInterfaceRequest struct {
@@ -44,8 +48,8 @@ type RouteFilterPrefix struct {
 // It is equivalent to Response of the action CreatePrivateVirtualInterface.
 // https://docs.aws.amazon.com/directconnect/latest/APIReference/API_CreatePrivateVirtualInterface.html
 type PrivateVirtualInterface struct {
-	// Embedded CreatePrivateVirtualInterfaceRequest
-	CreatePrivateVirtualInterfaceRequest
+	// Embedded NewPrivateVirtualInterface
+	ConnectionID          string              `json:"connectionId"`
 	AmazonSideASN         int                 `json:"amazonSideAsn"`
 	AwsDeviceV2           string              `json:"awsDeviceV2"`
 	AwsLogicalDeviceID    string              `json:"awsLogicalDeviceId"`
@@ -56,12 +60,10 @@ type PrivateVirtualInterface struct {
 	Region                string              `json:"region"`
 	RouteFilterPrefixes   []RouteFilterPrefix `json:"routeFilterPrefixes"`
 	SiteLinkEnabled       bool                `json:"siteLinkEnabled"`
-	Tags                  []DirectConnectTag  `json:"tags"`
-	VirtualGatewayID      string              `json:"virtualGatewayId"`
 	VirtualInterfaceID    string              `json:"virtualInterfaceId"`
-	VirtualInterfaceName  string              `json:"virtualInterfaceName"`
 	VirtualInterfaceState string              `json:"virtualInterfaceState"`
 	VirtualInterfaceType  string              `json:"virtualInterfaceType"`
+	NewPrivateVirtualInterface
 }
 
 // Implementing the Marshaler interface
@@ -83,4 +85,29 @@ func (p *PrivateVirtualInterface) UnmarshalJSON(b []byte) error {
 		Alias: (*Alias)(p),
 	}
 	return json.Unmarshal(b, &aux)
+}
+
+// CreatePrivateVirtualInterface
+func CreatePrivateVirtualInterface(r *http.Request) (PrivateVirtualInterface, error) {
+	var pvif PrivateVirtualInterface
+	var req CreatePrivateVirtualInterfaceRequest
+	err := RequestToJson(r, &req)
+	if err != nil {
+		return pvif, err
+	}
+	if req.NewPrivateVirtualInterface.VirtualGatewayID != "" && req.NewPrivateVirtualInterface.DirectConnectGatewayID != "" {
+		return pvif, fmt.Errorf("VirtualGatewayID and DirectConnectGatewayID cannot be specified together")
+	}
+	pvif.ConnectionID = req.ConnectionID
+	pvif.NewPrivateVirtualInterface = req.NewPrivateVirtualInterface
+	pvif.VirtualInterfaceID = "dxvif-" + randomString(8)
+	pvif.VirtualInterfaceState = "available"
+	pvif.VirtualInterfaceType = "private"
+	pvif.AmazonSideASN = 64512
+	pvif.AwsDeviceV2 = "virtual"
+	pvif.AwsLogicalDeviceID = "virtual"
+	pvif.JumboFrameCapable = false
+	//pvif.VirtualInterfaceName = req.NewPrivateVirtualInterface.VirtualInterfaceName
+
+	return pvif, nil
 }

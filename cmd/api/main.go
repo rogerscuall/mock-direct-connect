@@ -15,6 +15,7 @@ var (
 	dbNameConnection = "connection"
 	dbNameTags       = "tags"
 	dbNameDXGwy      = "dxgwys"
+	dbNamePrivateVIF = "privatevifs"
 )
 
 func handleRequest(w http.ResponseWriter, r *http.Request) {
@@ -41,10 +42,10 @@ func handleRequest(w http.ResponseWriter, r *http.Request) {
 	switch action {
 	case "CreateConnection":
 		CreateConnection(w, r)
-	case "DescribeConnections":
-		DescribeConnections(w, r)
-	case "DescribeTags":
-		DescribeTags(w, r)
+	case "CreateDirectConnectGateway":
+		CreateDXGateway(w, r)
+	case "CreatePrivateVirtualInterface":
+		CreatePrivateVirtualInterface(w, r)
 	case "DeleteConnection":
 		err := d.DeleteConnection(r, &dx)
 		if err != nil {
@@ -55,6 +56,20 @@ func handleRequest(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode(dx)
 
 		return
+	case "DeleteDirectConnectGateway":
+		DeleteDXGateway(w, r)
+	case "DeleteVirtualInterface":
+		DeleteVirtualInterface(w, r)
+	case "DescribeConnections":
+		DescribeConnections(w, r)
+	case "DescribeDirectConnectGateways":
+		DescribeDXGateways(w, r)
+	case "DescribeVirtualInterfaces":
+		DescribeVirtualInterfaces(w, r)
+	case "DescribeTags":
+		DescribeTags(w, r)
+	case "TagResource":
+		TagResource(w, r)
 	case "UpdateConnection":
 		err := d.UpdateConnection(r, &dx)
 		if err != nil {
@@ -65,16 +80,8 @@ func handleRequest(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode(dx)
 
 		return
-	case "TagResource":
-		TagResource(w, r)
-	case "CreateDirectConnectGateway":
-		CreateDXGateway(w, r)
-	case "DescribeDirectConnectGateways":
-		DescribeDXGateways(w, r)
 	case "UpdateDirectConnectGateway":
 		UpdateDXGateway(w, r)
-	case "DeleteDirectConnectGateway":
-		DeleteDXGateway(w, r)
 	}
 }
 

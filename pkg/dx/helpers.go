@@ -35,4 +35,3 @@ func GetIDFromARN(arn string) (string, error) {
 	}
 	return splitArn[1], nil
 }
-
