@@ -15,7 +15,8 @@ var (
 	dbNameConnection = "connection"
 	dbNameTags       = "tags"
 	dbNameDXGwy      = "dxgwys"
-	dbNamePrivateVIF = "privatevifs"
+	dbNameVIF        = "vifs"
+	dbNamePublicVIF  = "publicvifs"
 )
 
 func handleRequest(w http.ResponseWriter, r *http.Request) {
@@ -46,6 +47,8 @@ func handleRequest(w http.ResponseWriter, r *http.Request) {
 		CreateDXGateway(w, r)
 	case "CreatePrivateVirtualInterface":
 		CreatePrivateVirtualInterface(w, r)
+	case "CreatePublicVirtualInterface":
+		CreatePublicVirtualInterface(w, r)
 	case "DeleteConnection":
 		err := d.DeleteConnection(r, &dx)
 		if err != nil {

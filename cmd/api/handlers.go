@@ -96,7 +96,54 @@ func CreatePrivateVirtualInterface(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	vifDB, err := db.NewAdapter(dbNamePrivateVIF)
+	vifDB, err := db.NewAdapter(dbNameVIF)
+	if err != nil {
+		log.Println("Error in creating connection to database", err)
+		http.Error(w, "Database Connection failure", http.StatusInternalServerError)
+		return
+	}
+	defer vifDB.CloseDbConnection()
+
+	err = vifDB.SetVal(vif.VirtualInterfaceID, vif)
+	if err != nil {
+		log.Println("Error in creating connection to database", err)
+		http.Error(w, "Database Connection failure", http.StatusInternalServerError)
+		return
+	}
+
+	// Update the tag database
+	resourceTag := d.ResourceTag{
+		ResourceArn: d.CreateARN("us-east-1", vif.VirtualInterfaceID),
+		Tags:        vif.Tags,
+	}
+
+	tagDB, err := db.NewAdapter(dbNameTags)
+	if err != nil {
+		log.Println("Error in creating connection to database", err)
+		http.Error(w, "Database Connection failure", http.StatusInternalServerError)
+		return
+	}
+	defer tagDB.CloseDbConnection()
+
+	err = tagDB.SetVal(vif.VirtualInterfaceID, resourceTag)
+	if err != nil {
+		log.Println("Error in creating connection to database", err)
+		http.Error(w, "Database Connection failure", http.StatusInternalServerError)
+		return
+	}
+
+	returnOk(w, vif)
+}
+
+// CreatePublicVirtualInterface
+func CreatePublicVirtualInterface(w http.ResponseWriter, r *http.Request) {
+	vif, err := d.CreatePublicVirtualInterface(r)
+	if err != nil {
+		http.Error(w, "Bad request", http.StatusBadRequest)
+		return
+	}
+
+	vifDB, err := db.NewAdapter(dbNameVIF)
 	if err != nil {
 		log.Println("Error in creating connection to database", err)
 		http.Error(w, "Database Connection failure", http.StatusInternalServerError)
@@ -178,7 +225,7 @@ func DescribeVirtualInterfaces(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	vifDB, err := db.NewAdapter(dbNamePrivateVIF)
+	vifDB, err := db.NewAdapter(dbNameVIF)
 	if err != nil {
 		log.Println("Error in creating connection to database", err)
 		http.Error(w, "Database Connection failure", http.StatusInternalServerError)
@@ -320,7 +367,7 @@ func DeleteVirtualInterface(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	vifDB, err := db.NewAdapter(dbNamePrivateVIF)
+	vifDB, err := db.NewAdapter(dbNameVIF)
 	if err != nil {
 		log.Println("Error in creating connection to database", err)
 		http.Error(w, "Database Connection failure", http.StatusInternalServerError)
