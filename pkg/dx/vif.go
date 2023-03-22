@@ -1,6 +1,6 @@
 /*
-The file vif.go has the implementation of the api calls for private and public virtual interfaces.
-It embeds the NewPrivateVirtualInterface and NewPublicVirtualInterface in the struc5 PrivateVirtualInterface and PublicVirtualInterface respectively.
+The file **vif.go** has the implementation of the api calls for private and public virtual interfaces.
+It embeds the NewPrivateVirtualInterface and NewPublicVirtualInterface in the struct PrivateVirtualInterface and PublicVirtualInterface respectively.
 */
 package dx
 
