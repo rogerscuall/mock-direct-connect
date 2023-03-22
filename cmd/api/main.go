@@ -11,12 +11,18 @@ import (
 )
 
 var (
-	dx               d.Connection
+	dx d.Connection
+)
+
+const (
+	// dbNameConnection is the name of the DynamoDB table for connections
 	dbNameConnection = "connection"
-	dbNameTags       = "tags"
-	dbNameDXGwy      = "dxgwys"
-	dbNameVIF        = "vifs"
-	dbNamePublicVIF  = "publicvifs"
+	// dbNameDXGwy is the name of the DynamoDB table for Direct Connect Gateways
+	dbNameTags = "tags"
+	// dbNameDXGwy is the name of the DynamoDB table for Direct Connect Gateways
+	dbNameDXGwy = "dxgwys"
+	// dbNameVIF is the name of the DynamoDB table for Virtual Interfaces
+	dbNameVIF = "vifs"
 )
 
 func handleRequest(w http.ResponseWriter, r *http.Request) {
