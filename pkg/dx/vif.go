@@ -1,5 +1,6 @@
 /*
-Implementation of the api calls for private and public virtual interfaces
+The file vif.go has the implementation of the api calls for private and public virtual interfaces.
+It embeds the NewPrivateVirtualInterface and NewPublicVirtualInterface in the struc5 PrivateVirtualInterface and PublicVirtualInterface respectively.
 */
 package dx
 
@@ -107,7 +108,7 @@ type PublicVirtualInterface struct {
 	SiteLinkEnabled        bool               `json:"siteLinkEnabled"`
 	Tags                   []DirectConnectTag `json:"tags"`
 	VirtualGatewayId       string             `json:"virtualGatewayId"`
-	VirtualInterfaceID    string             `json:"virtualInterfaceId"`
+	VirtualInterfaceID     string             `json:"virtualInterfaceId"`
 	VirtualInterfaceState  string             `json:"virtualInterfaceState"`
 	VirtualInterfaceType   string             `json:"virtualInterfaceType"`
 	Vlan                   int                `json:"vlan"`
@@ -134,7 +135,8 @@ func (p *PrivateVirtualInterface) UnmarshalJSON(b []byte) error {
 	return json.Unmarshal(b, &aux)
 }
 
-// CreatePrivateVirtualInterface
+// CreatePrivateVirtualInterface uses the request to create a PrivateVirtualInterface.
+// The interface is available after creation.
 func CreatePrivateVirtualInterface(r *http.Request) (PrivateVirtualInterface, error) {
 	var pvif PrivateVirtualInterface
 	var req CreatePrivateVirtualInterfaceRequest
@@ -181,7 +183,8 @@ func (p *PublicVirtualInterface) UnmarshalJSON(b []byte) error {
 	return json.Unmarshal(b, &aux)
 }
 
-// CreatePublicVirtualInterface
+// CreatePublicVirtualInterface uses the request to create a PublicVirtualInterface.
+// The interface is available after creation.
 func CreatePublicVirtualInterface(r *http.Request) (PublicVirtualInterface, error) {
 	var pvif PublicVirtualInterface
 	var req CreatePublicVirtualInterfaceRequest
