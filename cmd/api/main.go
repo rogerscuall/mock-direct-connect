@@ -56,15 +56,7 @@ func handleRequest(w http.ResponseWriter, r *http.Request) {
 	case "CreatePublicVirtualInterface":
 		CreatePublicVirtualInterface(w, r)
 	case "DeleteConnection":
-		err := d.DeleteConnection(r, &dx)
-		if err != nil {
-			http.Error(w, "Bad request", http.StatusBadRequest)
-			return
-		}
-
-		json.NewEncoder(w).Encode(dx)
-
-		return
+		DeleteConnections(w, r)
 	case "DeleteDirectConnectGateway":
 		DeleteDXGateway(w, r)
 	case "DeleteVirtualInterface":
