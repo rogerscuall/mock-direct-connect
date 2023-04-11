@@ -201,7 +201,7 @@ func CreatePublicVirtualInterface(r *http.Request) (PublicVirtualInterface, erro
 	pvif.AwsDeviceV2 = "virtual"
 	pvif.AwsLogicalDeviceId = "virtual"
 	pvif.JumboFrameCapable = false
+	pvif.Vlan = req.NewPublicVirtualInterface.Vlan
 	//pvif.VirtualInterfaceName = req.NewPrivateVirtualInterface.VirtualInterfaceName
-
 	return pvif, nil
 }
