@@ -320,6 +320,46 @@ func DescribeDXGateways(w http.ResponseWriter, r *http.Request) {
 	returnOk(w, response)
 }
 
+// DeleteConnections deletes a connection.
+func DeleteConnections(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		ConnectionID string `json:"connectionId"`
+	}
+	err := d.RequestToJson(r, &req)
+	if err != nil {
+		http.Error(w, "Bad request", http.StatusBadRequest)
+		return
+	}
+
+	connectionDB, err := db.NewAdapter(dbNameConnection)
+	if err != nil {
+		log.Println("Error in creating connection to database", err)
+		http.Error(w, "Database Connection failure", http.StatusInternalServerError)
+		return
+	}
+	defer connectionDB.CloseDbConnection()
+
+	var dx d.Connection
+	err = connectionDB.GetVal(req.ConnectionID, &dx)
+	if err != nil {
+		log.Println("Error in getting connection ID from database", err)
+		http.Error(w, "Internal Error", http.StatusInternalServerError)
+		return
+	}
+
+	dx.ConnectionState = "deleted"
+
+	// Delete the connection from the database
+	err = connectionDB.SetVal(req.ConnectionID, dx)
+	if err != nil {
+		log.Println("Error in deleting connection ID from database", err)
+		http.Error(w, "Internal Error", http.StatusInternalServerError)
+		return
+	}
+
+	returnOk(w, dx)
+}
+
 // DeleteDXGateway deletes a Direct Connect Gateway.
 func DeleteDXGateway(w http.ResponseWriter, r *http.Request) {
 	request, err := d.DeleteDXGateway(r)
