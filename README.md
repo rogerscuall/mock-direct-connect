@@ -1,6 +1,6 @@
 # Direct Connect Mock
 
-At the current moment is not possible to test features of Direct Connect without access to one. This is a mock of the Direct Connect API. It is useful to test Terraform code that uses the Direct Connect API.
+At the current moment is not possible to test features of Direct Connect without access to one. This is a mock of the Direct Connect API service. It is useful to test Terraform code that uses the Direct Connect API or any other code that uses the Direct Connect API.
 
 This like is very useful [AWS Direct API.](https://frichetten.com/blog/aws-api-protocols/#:~:text=Here%2C%20there%20is%20no%20X-Amz-Target%20header.%20It%20is,to%20intercept%20CLI%20traffic%20and%20inspect%20it%20yourself.)
 
