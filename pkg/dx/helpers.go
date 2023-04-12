@@ -2,8 +2,10 @@ package dx
 
 import (
 	"encoding/json"
+	"fmt"
 	"math/rand"
 	"net/http"
+	"strings"
 )
 
 // randomString generates a random string of length n
@@ -24,4 +26,12 @@ func RequestToJson(r *http.Request, v interface{}) error {
 	}
 
 	return nil
+}
+
+func GetIDFromARN(arn string) (string, error) {
+	splitArn := strings.Split(arn, "/")
+	if len(splitArn) != 2 {
+		return "", fmt.Errorf("invalid ARN: %s", arn)
+	}
+	return splitArn[1], nil
 }

@@ -1,6 +1,10 @@
 package dx
 
-import "net/http"
+import (
+	"encoding/json"
+	"fmt"
+	"net/http"
+)
 
 // DescribeTagsRequest is the request body for DescribeTags
 type DescribeTagsRequest struct {
@@ -12,11 +16,29 @@ type DescribeTagsResponse struct {
 }
 
 type ResourceTag struct {
-	ResourceArn string `json:"resourceArn"`
-	Tags        []struct {
-		Key   string `json:"key"`
-		Value string `json:"value"`
-	} `json:"tags"`
+	ResourceArn string             `json:"resourceArn"`
+	Tags        []DirectConnectTag `json:"tags"`
+}
+
+// Implement the Marshaler interface
+func (r ResourceTag) MarshalJSON() ([]byte, error) {
+	type Alias ResourceTag
+	return json.Marshal(&struct {
+		*Alias
+	}{
+		Alias: (*Alias)(&r),
+	})
+}
+
+// Implement the Unmarshaler interface
+func (r *ResourceTag) UnmarshalJSON(b []byte) error {
+	type Alias ResourceTag
+	aux := &struct {
+		*Alias
+	}{
+		Alias: (*Alias)(r),
+	}
+	return json.Unmarshal(b, &aux)
 }
 
 type DirectConnectTag struct {
@@ -24,21 +46,34 @@ type DirectConnectTag struct {
 	Value string `json:"value"`
 }
 
-func DescribeTags(r *http.Request) (*DescribeTagsResponse, error) {
+func DescribeTags(r *http.Request) (DescribeTagsRequest, error) {
 	var request DescribeTagsRequest
 
 	// Unmarshal the body
 	err := RequestToJson(r, &request)
 	if err != nil {
-		return nil, err
+		return request, err
 	}
 
-	response := DescribeTagsResponse{
-		ResourceTags: []ResourceTag{
-			{
-				ResourceArn: "arn:aws:directconnect:us-east-1:1234567890:dxcon-1234567890",
-			},
-		},
+	if len(request.ResourceArns) == 0 {
+		return request, fmt.Errorf("ResourceArns is empty")
 	}
-	return &response, nil
+
+	return request, nil
+}
+
+func TagResource(r *http.Request) (ResourceTag, error) {
+	var request ResourceTag
+
+	// Unmarshal the body
+	err := RequestToJson(r, &request)
+	if err != nil {
+		return request, err
+	}
+
+	return request, nil
+}
+
+func CreateARN(region, id string) string {
+	return fmt.Sprintf("arn:aws:directconnect:%s:123456789012:dxcon/%s", region, id)
 }
