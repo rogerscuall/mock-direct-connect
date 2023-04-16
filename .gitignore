@@ -104,4 +104,4 @@ web
 *.tfstate.backup
 *.tfstate
 .terraform
-web
+dist

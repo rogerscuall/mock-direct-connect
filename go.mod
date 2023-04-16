@@ -2,6 +2,8 @@ module dx-mock
 
 go 1.20
 
+require github.com/charmbracelet/charm v0.12.5
+
 require (
 	github.com/aymanbagabas/go-osc52 v1.2.1 // indirect
 	github.com/caarlos0/env/v6 v6.10.0 // indirect
@@ -11,7 +13,6 @@ require (
 	github.com/cespare/xxhash/v2 v2.1.2 // indirect
 	github.com/charmbracelet/bubbles v0.13.0 // indirect
 	github.com/charmbracelet/bubbletea v0.23.2 // indirect
-	github.com/charmbracelet/charm v0.12.5 // indirect
 	github.com/charmbracelet/keygen v0.3.0 // indirect
 	github.com/charmbracelet/lipgloss v0.6.0 // indirect
 	github.com/charmbracelet/log v0.1.0 // indirect
