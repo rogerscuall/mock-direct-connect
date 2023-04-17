@@ -63,12 +63,12 @@ resource "aws_dx_public_virtual_interface" "this" {
   ]
 }
 
-data "aws_dx_connection" "this" {
-  name = "tfx-connection-exmple"
-}
+# data "aws_dx_connection" "this" {
+#   name = "tfx-connection-exmple"
+# }
 
-resource "aws_dx_bgp_peer" "this" {
-  virtual_interface_id = aws_dx_private_virtual_interface.this.id
-  address_family       = "ipv4"
-  bgp_asn              = 65351
-}
+# resource "aws_dx_bgp_peer" "this" {
+#   virtual_interface_id = aws_dx_private_virtual_interface.this.id
+#   address_family       = "ipv4"
+#   bgp_asn              = 65351
+# }
