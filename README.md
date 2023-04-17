@@ -1,6 +1,7 @@
 # Direct Connect Mock
 
 At the current moment is not possible to test features of Direct Connect without access to one. This is a mock of the Direct Connect API service. It is useful to test Terraform code that uses the Direct Connect API or any other code that uses the Direct Connect API.
+The following mock only include some of the API calls.
 
 ## How to install
 
