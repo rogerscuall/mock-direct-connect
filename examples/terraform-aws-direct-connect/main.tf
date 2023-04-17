@@ -63,10 +63,12 @@ resource "aws_dx_public_virtual_interface" "this" {
   ]
 }
 
+# This one can be used once the aws_dx_connection resource is available
 # data "aws_dx_connection" "this" {
 #   name = "tfx-connection-exmple"
 # }
 
+# Currently not available...
 # resource "aws_dx_bgp_peer" "this" {
 #   virtual_interface_id = aws_dx_private_virtual_interface.this.id
 #   address_family       = "ipv4"
