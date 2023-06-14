@@ -111,8 +111,8 @@ func CreateBgpPeer(r *http.Request) (BGPPeer, error) {
 		BgpPeerState:       "available",
 		BgpStatus:          "up",
 		CustomerAddress:    req.NewBGPPeer.CustomerAddress,
-	}
+	})
 	// Not sure about this one, needs verification.
 	bgpPeer.VirtualInterface.ConnectionId = req.VirtualInterfaceId
-	
+	return bgpPeer, nil
 }
