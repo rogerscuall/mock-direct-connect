@@ -15,6 +15,7 @@ import (
 var (
 	dx                d.Connection
 	createBgpNeighbor bool
+	localBgpAsn 	 = 65001
 )
 
 const (
@@ -50,6 +51,8 @@ func handleRequest(w http.ResponseWriter, r *http.Request) {
 	action := serviceAction[1]
 	log.Println("Request for: ", action)
 	switch action {
+	case "CreateBgpPeer":
+		CreateBgpPeer(w, r)
 	case "CreateConnection":
 		CreateConnection(w, r)
 	case "CreateDirectConnectGateway":
@@ -99,7 +102,7 @@ func main() {
 		if err != nil {
 			log.Panic("Error in getting primary IP address", err)
 		}
-		serverBgp, err := bgp.CreateBgpServer(65001, ipAddress)
+		serverBgp, err := bgp.CreateBgpServer(localBgpAsn, ipAddress)
 		if err != nil {
 			log.Panic("Error in creating BGP server", err)
 		}
