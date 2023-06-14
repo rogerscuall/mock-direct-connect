@@ -27,6 +27,8 @@ const (
 	dbNameDXGwy = "dxgwys"
 	// dbNameVIF is the name of the DynamoDB table for Virtual Interfaces
 	dbNameVIF = "vifs"
+	// dbBgpPeer is the name of the DynamoDB table for BGP Peers
+	dbNameBgpPeer = "bgpPeers"
 )
 
 func handleRequest(w http.ResponseWriter, r *http.Request) {
