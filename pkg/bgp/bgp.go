@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"log"
+	"net"
 
 	api "github.com/osrg/gobgp/v3/api"
 	"github.com/osrg/gobgp/v3/pkg/server"
@@ -17,7 +18,7 @@ var (
 // CreateBgpServer creates a BGP server
 // It needs the ASN and the IP address of the BGP server
 // TODO: check that the ASN and the IP address are valid
-func CreateBgpServer(asn int, ipAddress string) (*server.BgpServer, error) {
+func CreateBgpServer(asn int, ipAddress net.IP) (*server.BgpServer, error) {
 	// Check for the correct ASN
 	if asn < 1 || asn > 2147483647 {
 		return nil, ErrorInvalidASN
@@ -28,7 +29,7 @@ func CreateBgpServer(asn int, ipAddress string) (*server.BgpServer, error) {
 	if err := s.StartBgp(context.Background(), &api.StartBgpRequest{
 		Global: &api.Global{
 			Asn:      uint32(asn),
-			RouterId: ipAddress,
+			RouterId: ipAddress.String(),
 		},
 	}); err != nil {
 		return nil, err
@@ -93,4 +94,16 @@ func CreateBgpPeer(s *server.BgpServer) error {
 	}
 
 	return nil
+}
+
+// GetPrimaryIP returns the primary IP address of the machine
+// It leaves the decision to the OS to choose the primary IP address.
+func GetPrimaryIP() (net.IP, error) {
+	conn, err := net.Dial("udp", "8.8.8.8:80")
+	if err != nil {
+		return nil, err
+	}
+	defer conn.Close()
+	localAddr := conn.LocalAddr().(*net.UDPAddr)
+	return localAddr.IP, err
 }
