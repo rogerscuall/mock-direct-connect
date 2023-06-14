@@ -33,3 +33,10 @@ This like is very useful [AWS Direct API.](https://frichetten.com/blog/aws-api-p
 
 * The header `X-Amz-Target` is used to determine action to perform. The header has value like this: `OvertureService.CreateConnection` this correspond CreateConnection action. In other words this is a substitute the the Action in the query string.
 * The header `Content-Type` is used to determine the format of the request body. The header has value like this: `application/x-amz-json-1.1`.
+
+## Preview features
+
+### BGP Peer
+
+To use this feature create the ENVAR `export CREATE_BGP_NEIGHBOR=true` before running the mock.
+The localhost for the mock will be assigned all the values related to AWS. Currently the values are ignored and ASN is 65001 and the IP address is the primary IP address of the main interface.
