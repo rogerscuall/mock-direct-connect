@@ -8,6 +8,10 @@ import (
 	"net/http"
 )
 
+// func CreateBgpPeer(w http.ResponseWriter, r *http.Request) {
+// 	//b, err := d.CreateBgpPeer(r)
+// }
+
 func CreateConnection(w http.ResponseWriter, r *http.Request) {
 	dx, err := d.CreateConnection(r)
 	if err != nil {
