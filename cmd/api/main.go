@@ -53,8 +53,8 @@ func handleRequest(w http.ResponseWriter, r *http.Request) {
 	action := serviceAction[1]
 	log.Println("Request for: ", action)
 	switch action {
-	case "CreateBgpPeer":
-		CreateBgpPeer(w, r)
+	// case "CreateBgpPeer":
+	// 	CreateBgpPeer(w, r)
 	case "CreateConnection":
 		CreateConnection(w, r)
 	case "CreateDirectConnectGateway":
