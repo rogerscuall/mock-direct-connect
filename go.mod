@@ -4,10 +4,7 @@ go 1.20
 
 require github.com/charmbracelet/charm v0.12.5
 
-require github.com/osrg/gobgp v2.0.0+incompatible // indirect
-
 require (
-	github.com/BurntSushi/toml v1.2.1
 	github.com/aymanbagabas/go-osc52 v1.2.1 // indirect
 	github.com/caarlos0/env/v6 v6.10.0 // indirect
 	github.com/caarlos0/sshmarshal v0.1.0 // indirect
@@ -53,7 +50,7 @@ require (
 	github.com/muesli/reflow v0.3.0 // indirect
 	github.com/muesli/sasquatch v0.0.0-20200811221207-66979d92330a // indirect
 	github.com/muesli/termenv v0.14.0 // indirect
-	github.com/osrg/gobgp/v3 v3.14.0 // indirect
+	github.com/osrg/gobgp/v3 v3.14.0
 	github.com/pelletier/go-toml/v2 v2.0.7 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/rivo/uniseg v0.2.0 // indirect
@@ -66,7 +63,6 @@ require (
 	github.com/subosito/gotenv v1.4.2 // indirect
 	github.com/vishvananda/netlink v1.2.1-beta.2 // indirect
 	github.com/vishvananda/netns v0.0.4 // indirect
-	github.com/wenovus/gobgp/v3 v3.0.0-20221024234659-8df3c6938ab7
 	go.opencensus.io v0.24.0 // indirect
 	golang.org/x/crypto v0.6.0 // indirect
 	golang.org/x/net v0.8.0 // indirect
@@ -76,7 +72,7 @@ require (
 	golang.org/x/text v0.8.0 // indirect
 	google.golang.org/genproto v0.0.0-20230320184635-7606e756e683 // indirect
 	google.golang.org/grpc v1.53.0 // indirect
-	google.golang.org/protobuf v1.30.0 // indirect
+	google.golang.org/protobuf v1.30.0
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )

@@ -2,8 +2,8 @@ package main
 
 import (
 	"dx-mock/adapters/db"
-	d "dx-mock/pkg/dx"
 	"dx-mock/pkg/bgp"
+	d "dx-mock/pkg/dx"
 	"encoding/json"
 	"log"
 	"net/http"
@@ -195,7 +195,6 @@ func CreatePublicVirtualInterface(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Database Connection failure", http.StatusInternalServerError)
 		return
 	}
-
 
 	returnOk(w, vif)
 }

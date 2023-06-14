@@ -57,12 +57,9 @@ func (da Adapter) SetVal(key string, s json.Marshaler) error {
 	return nil
 }
 
-
 func (da Adapter) Sync() {
 	err := da.db.Sync()
 	if err != nil {
 		log.Fatalf("Error syncing database: %v", err)
 	}
 }
-
-
