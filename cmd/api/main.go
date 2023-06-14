@@ -8,6 +8,7 @@ import (
 	"os"
 	"strings"
 
+	"dx-mock/pkg/bgp"
 	d "dx-mock/pkg/dx"
 )
 
@@ -90,8 +91,23 @@ func handleRequest(w http.ResponseWriter, r *http.Request) {
 
 func main() {
 	// Load createBgpNeighbor from the environment variable CREATE_BGP_NEIGHBOR
-	if os.Getenv("CREATE_BGP_NEIGHBOR") == "true" {
-		createBgpNeighbor = true
+	createBgpNeighbor = os.Getenv("CREATE_BGP_NEIGHBOR") == "true"
+	log.Println("The value of createBgpNeighbor is:", createBgpNeighbor)
+	if createBgpNeighbor {
+		log.Println("Creating BGP service")
+		ipAddress, err := bgp.GetPrimaryIP()
+		if err != nil {
+			log.Panic("Error in getting primary IP address", err)
+		}
+		serverBgp, err := bgp.CreateBgpServer(65001, ipAddress)
+		if err != nil {
+			log.Panic("Error in creating BGP server", err)
+		}
+		log.Println("Creating BGP peer")
+		err = bgp.CreateBgpPeer(serverBgp)
+		if err != nil {
+			log.Panic("Error in creating BGP peer", err)
+		}
 	}
 	http.HandleFunc("/", handleRequest)
 	fmt.Println("Mock Direct Connect API server listening on port 8080")
