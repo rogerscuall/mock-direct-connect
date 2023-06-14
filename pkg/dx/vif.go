@@ -153,7 +153,7 @@ func CreatePrivateVirtualInterface(r *http.Request) (PrivateVirtualInterface, er
 	pvif.VirtualInterfaceState = "available"
 	pvif.VirtualInterfaceType = "private"
 	//TODO: Fix this hardcoding
-	pvif.AmazonSideASN = 64512
+	pvif.AmazonSideASN = req.NewPrivateVirtualInterface.ASN
 	pvif.AwsDeviceV2 = "virtual"
 	pvif.AwsLogicalDeviceID = "virtual"
 	pvif.JumboFrameCapable = false

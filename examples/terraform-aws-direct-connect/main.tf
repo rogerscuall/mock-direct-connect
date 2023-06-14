@@ -35,10 +35,10 @@ resource "aws_dx_private_virtual_interface" "this" {
   name             = "vif-foo"
   vlan             = 4094
   address_family   = "ipv4"
-  bgp_asn          = 65352
+  bgp_asn          = 65001
   dx_gateway_id    = aws_dx_gateway.this.id
   customer_address = "10.0.0.1/28"
-  amazon_address   = "10.0.0.2/28"
+  amazon_address   = "192.168.86.29"
   bgp_auth_key = "1234567890"
   tags = {
     "pvif" = "one"

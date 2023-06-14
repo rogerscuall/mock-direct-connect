@@ -5,13 +5,15 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"strings"
 
 	d "dx-mock/pkg/dx"
 )
 
 var (
-	dx d.Connection
+	dx                d.Connection
+	createBgpNeighbor bool
 )
 
 const (
@@ -87,6 +89,10 @@ func handleRequest(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
+	// Load createBgpNeighbor from the environment variable CREATE_BGP_NEIGHBOR
+	if os.Getenv("CREATE_BGP_NEIGHBOR") == "true" {
+		createBgpNeighbor = true
+	}
 	http.HandleFunc("/", handleRequest)
 	fmt.Println("Mock Direct Connect API server listening on port 8080")
 	http.ListenAndServe(":8080", nil)

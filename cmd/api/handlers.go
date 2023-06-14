@@ -3,6 +3,7 @@ package main
 import (
 	"dx-mock/adapters/db"
 	d "dx-mock/pkg/dx"
+	"dx-mock/pkg/bgp"
 	"encoding/json"
 	"log"
 	"net/http"
@@ -131,6 +132,22 @@ func CreatePrivateVirtualInterface(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Database Connection failure", http.StatusInternalServerError)
 		return
 	}
+	if createBgpNeighbor {
+		log.Println("Creating BGP service")
+		serverBgp, err := bgp.CreateBgpServer(vif.NewPrivateVirtualInterface.ASN, vif.NewPrivateVirtualInterface.AmazonAddress)
+		if err != nil {
+			log.Println("Error in creating BGP server", err)
+			http.Error(w, "BGP Server failure", http.StatusInternalServerError)
+			return
+		}
+		log.Println("Creating BGP peer")
+		err = bgp.CreateBgpPeer(serverBgp)
+		if err != nil {
+			log.Println("Error in creating BGP peer", err)
+			http.Error(w, "BGP Peer failure", http.StatusInternalServerError)
+			return
+		}
+	}
 
 	returnOk(w, vif)
 }
@@ -178,6 +195,7 @@ func CreatePublicVirtualInterface(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Database Connection failure", http.StatusInternalServerError)
 		return
 	}
+
 
 	returnOk(w, vif)
 }
