@@ -53,11 +53,12 @@ type RouteFilterPrefix struct {
 // https://docs.aws.amazon.com/directconnect/latest/APIReference/API_CreatePrivateVirtualInterface.html
 type PrivateVirtualInterface struct {
 	// Embedded NewPrivateVirtualInterface
-	ConnectionID          string              `json:"connectionId"`
+	NewPrivateVirtualInterface
 	AmazonSideASN         int                 `json:"amazonSideAsn"`
 	AwsDeviceV2           string              `json:"awsDeviceV2"`
 	AwsLogicalDeviceID    string              `json:"awsLogicalDeviceId"`
 	BGPPeers              []BGPConfig         `json:"bgpPeers"`
+	ConnectionID          string              `json:"connectionId"`
 	JumboFrameCapable     bool                `json:"jumboFrameCapable"`
 	Location              string              `json:"location"`
 	OwnerAccount          string              `json:"ownerAccount"`
@@ -67,7 +68,6 @@ type PrivateVirtualInterface struct {
 	VirtualInterfaceID    string              `json:"virtualInterfaceId"`
 	VirtualInterfaceState string              `json:"virtualInterfaceState"`
 	VirtualInterfaceType  string              `json:"virtualInterfaceType"`
-	NewPrivateVirtualInterface
 }
 
 // Public interface
@@ -95,11 +95,11 @@ type PublicVirtualInterface struct {
 	NewPublicVirtualInterface
 	AmazonSideAsn          int                `json:"amazonSideAsn"`
 	AwsDeviceV2            string             `json:"awsDeviceV2"`
-	AwsLogicalDeviceId     string             `json:"awsLogicalDeviceId"`
+	AwsLogicalDeviceID     string             `json:"awsLogicalDeviceId"`
 	BgpPeers               []BGPConfig        `json:"bgpPeers"`
-	ConnectionId           string             `json:"connectionId"`
+	ConnectionID           string             `json:"connectionId"`
 	CustomerRouterConfig   string             `json:"customerRouterConfig"`
-	DirectConnectGatewayId string             `json:"directConnectGatewayId"`
+	DirectConnectGatewayID string             `json:"directConnectGatewayId"`
 	JumboFrameCapable      bool               `json:"jumboFrameCapable"`
 	Location               string             `json:"location"`
 	Mtu                    int                `json:"mtu"`
@@ -192,14 +192,14 @@ func CreatePublicVirtualInterface(r *http.Request) (PublicVirtualInterface, erro
 	if err != nil {
 		return pvif, err
 	}
-	pvif.ConnectionId = req.ConnectionID
+	pvif.ConnectionID = req.ConnectionID
 	pvif.NewPublicVirtualInterface = req.NewPublicVirtualInterface
 	pvif.VirtualInterfaceID = "dxvif-" + randomString(8)
 	pvif.VirtualInterfaceState = "available"
 	pvif.VirtualInterfaceType = "public"
 	pvif.AmazonSideAsn = 64512
 	pvif.AwsDeviceV2 = "virtual"
-	pvif.AwsLogicalDeviceId = "virtual"
+	pvif.AwsLogicalDeviceID = "virtual"
 	pvif.JumboFrameCapable = false
 	pvif.Vlan = req.NewPublicVirtualInterface.Vlan
 	//pvif.VirtualInterfaceName = req.NewPrivateVirtualInterface.VirtualInterfaceName
