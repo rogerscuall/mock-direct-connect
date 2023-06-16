@@ -68,6 +68,21 @@ func CreateBgpPeer(s *server.BgpServer, asn int, ipAddress net.IP) error {
 	return nil
 }
 
+func DeleteBGPPeer(s *server.BgpServer, asn int, ipAddress net.IP) error {
+	// Check for the correct ASN
+	if !checkASN(asn) {
+		return ErrorInvalidASN
+	}
+
+	if err := s.DeletePeer(context.Background(), &api.DeletePeerRequest{
+		Address: ipAddress.String(),
+	}); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 // AddPath adds a path to the BGP server
 func AddPath(s *server.BgpServer, path net.IPNet) error {
 	prefixLengh, _ := path.Mask.Size()
@@ -103,6 +118,7 @@ func AddPath(s *server.BgpServer, path net.IPNet) error {
 	if err != nil {
 		return err
 	}
+	return nil
 }
 
 // GetPrimaryIP returns the primary IP address of the machine
