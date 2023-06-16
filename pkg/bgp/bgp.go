@@ -20,7 +20,7 @@ var (
 // TODO: check that the ASN and the IP address are valid
 func CreateBgpServer(asn int, ipAddress net.IP) (*server.BgpServer, error) {
 	// Check for the correct ASN
-	if asn < 1 || asn > 2147483647 {
+	if !checkASN(asn) {
 		return nil, ErrorInvalidASN
 	}
 	s := server.NewBgpServer()
@@ -46,11 +46,15 @@ func CreateBgpServer(asn int, ipAddress net.IP) (*server.BgpServer, error) {
 	return s, nil
 }
 
-func CreateBgpPeer(s *server.BgpServer) error {
+func CreateBgpPeer(s *server.BgpServer, asn int, ipAddress net.IP) error {
+	// Check for the correct ASN
+	if !checkASN(asn) {
+		return ErrorInvalidASN
+	}
 	n := &api.Peer{
 		Conf: &api.PeerConf{
-			NeighborAddress: "20.127.114.9",
-			PeerAsn:         65002,
+			NeighborAddress: ipAddress.String(),
+			PeerAsn:         uint32(asn),
 		},
 		EbgpMultihop: &api.EbgpMultihop{Enabled: true, MultihopTtl: 250},
 	}
