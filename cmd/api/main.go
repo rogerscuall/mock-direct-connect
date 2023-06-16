@@ -121,7 +121,7 @@ func main() {
 			log.Println("Virtual Interface:", vif.VirtualInterfaceID)
 			for _, bgpPeer := range vif.BGPPeers {
 				log.Println("BGP Peer:", bgpPeer.BGPPeerID)
-				err = bgp.CreateBgpPeer(serverBgp, bgpPeer.ASN, net.ParseIP(bgpPeer.CustomerAddress))
+				err = bgp.CreateBGPPeer(serverBgp, bgpPeer.ASN, net.ParseIP(bgpPeer.CustomerAddress))
 				if err != nil {
 					log.Println("Error in creating BGP peer", err)
 				}
