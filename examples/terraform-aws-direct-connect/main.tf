@@ -46,22 +46,33 @@ resource "aws_dx_private_virtual_interface" "this" {
 
 }
 
-resource "aws_dx_public_virtual_interface" "this" {
-  connection_id = aws_dx_connection.this.id
 
-  name           = "vif-foo"
-  vlan           = 4090
-  address_family = "ipv4"
-  bgp_asn        = 65350
-
-  customer_address = "175.45.176.1/30"
-  amazon_address   = "175.45.176.2/30"
-
-  route_filter_prefixes = [
-    "210.52.109.0/24",
-    "175.45.176.0/22",
-  ]
+resource "aws_dx_bgp_peer" "peer" {
+  virtual_interface_id = aws_dx_private_virtual_interface.this.id
+  address_family       = "ipv4"
+  bgp_asn              = 65002
+  customer_address     = "20.127.114.9"
+  bgp_auth_key         = "1234567890"
+  # This address is ignored, use the address of the host running the mock server
+  amazon_address       = "1.1.1.1"
 }
+
+# resource "aws_dx_public_virtual_interface" "this" {
+#   connection_id = aws_dx_connection.this.id
+
+#   name           = "vif-foo"
+#   vlan           = 4090
+#   address_family = "ipv4"
+#   bgp_asn        = 65350
+
+#   customer_address = "175.45.176.1/30"
+#   amazon_address   = "175.45.176.2/30"
+
+#   route_filter_prefixes = [
+#     "210.52.109.0/24",
+#     "175.45.176.0/22",
+#   ]
+# }
 
 # This one can be used once the aws_dx_connection resource is available
 # data "aws_dx_connection" "this" {
