@@ -8,9 +8,72 @@ import (
 	"net/http"
 )
 
-// func CreateBgpPeer(w http.ResponseWriter, r *http.Request) {
-// 	//b, err := d.CreateBgpPeer(r)
-// }
+// CreateBGPPeer creates a BGP Peer.
+// It checks if the Virtual Interface exists in the database and is available.
+// If it is it will add the BGP Peer to the Virtual Interface.
+func CreateBGPPeer(w http.ResponseWriter, r *http.Request) {
+	var req d.CreateBgpPeerRequest
+	err := d.RequestToJson(r, &req)
+	if err != nil {
+		http.Error(w, "Bad request", http.StatusBadRequest)
+		return
+	}
+
+	vifDB, err := db.NewAdapter(dbNameVIF)
+	if err != nil {
+		log.Println("Error in creating connection to database", err)
+		http.Error(w, "Database Connection failure", http.StatusInternalServerError)
+		return
+	}
+	defer vifDB.CloseDbConnection()
+
+	var privateVIF d.PrivateVirtualInterface
+
+	err = vifDB.GetVal(req.VirtualInterfaceID, &privateVIF)
+	if err != nil {
+		log.Println("Error in getting virtual interface ID from database", err)
+		http.Error(w, "Internal Error", http.StatusInternalServerError)
+		return
+	}
+	// Check if the Virtual Interface is available
+	if privateVIF.VirtualInterfaceState != "available" {
+		http.Error(w, "Virtual Interface is not available", http.StatusBadRequest)
+		return
+	}
+
+	// check if the BGP Peer already exists
+	for _, bgpPeer := range privateVIF.BGPPeers {
+		if bgpPeer.BGPPeerID == req.NewBGPPeer.CustomerAddress {
+			http.Error(w, "BGP Peer already exists", http.StatusBadRequest)
+			return
+		}
+	}
+
+	// Add the BGP Peer to the Virtual Interface
+	privateVIF.BGPPeers = append(privateVIF.BGPPeers, d.BGPConfig{
+		AddressFamily:      req.NewBGPPeer.AddressFamily,
+		AmazonAddress:      req.NewBGPPeer.AmazonAddress,
+		ASN:                req.NewBGPPeer.Asn,
+		AuthKey:            req.NewBGPPeer.AuthKey,
+		AwsDeviceV2:        "virtual",
+		AwsLogicalDeviceID: "virtual",
+		BGPPeerID:          req.NewBGPPeer.CustomerAddress,
+		BGPPeerState:       "available",
+		BGPStatus:          "up",
+		CustomerAddress:    req.NewBGPPeer.CustomerAddress,
+	})
+
+	// Update the Virtual Interface in the database
+	err = vifDB.SetVal(req.VirtualInterfaceID, privateVIF)
+	if err != nil {
+		log.Println("Error in creating connection to database", err)
+		http.Error(w, "Database Connection failure", http.StatusInternalServerError)
+		return
+	}
+
+	returnOk(w, privateVIF)
+
+}
 
 func CreateConnection(w http.ResponseWriter, r *http.Request) {
 	dx, err := d.CreateConnection(r)
@@ -322,6 +385,58 @@ func DescribeDXGateways(w http.ResponseWriter, r *http.Request) {
 	}
 
 	returnOk(w, response)
+}
+
+// DeleteBGPPeer deletes a BGP Peer.
+// Check if the Virtual Interface exists in the database.
+// Check if the BGP Peer exists in the Virtual Interface.
+// Change the state of the BGP Peer to deleted and the status to down.
+func DeleteBGPPeer(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		ASN                int    `json:"asn"`
+		BGPPeerID          string `json:"bgpPeerId"`
+		CustomerAddress    string `json:"customerAddress"`
+		VirtualInterfaceID string `json:"virtualInterfaceId"`
+	}
+	err := d.RequestToJson(r, &req)
+	if err != nil {
+		http.Error(w, "Bad request", http.StatusBadRequest)
+		return
+	}
+
+	vifDB, err := db.NewAdapter(dbNameVIF)
+	if err != nil {
+		log.Println("Error in creating connection to database", err)
+		http.Error(w, "Database Connection failure", http.StatusInternalServerError)
+		return
+	}
+	defer vifDB.CloseDbConnection()
+
+	var privateVIF d.PrivateVirtualInterface
+
+	err = vifDB.GetVal(req.VirtualInterfaceID, &privateVIF)
+	if err != nil {
+		log.Println("Error in getting virtual interface ID from database", err)
+		http.Error(w, "Internal Error", http.StatusInternalServerError)
+		return
+	}
+
+	// check if the BGP Peer already exists
+	for key, bgpPeer := range privateVIF.BGPPeers {
+		if bgpPeer.CustomerAddress == req.CustomerAddress {
+			// Update the BGP Peer
+			privateVIF.BGPPeers[key].BGPPeerState = "deleted"
+			privateVIF.BGPPeers[key].BGPStatus = "down"
+		}
+	}
+
+	err = vifDB.SetVal(req.VirtualInterfaceID, privateVIF)
+	if err != nil {
+		log.Println("Error in creating connection to database", err)
+		http.Error(w, "Database Connection failure", http.StatusInternalServerError)
+		return
+	}
+	returnOk(w, privateVIF)
 }
 
 // DeleteConnections deletes a connection.
