@@ -35,11 +35,11 @@ resource "aws_dx_private_virtual_interface" "this" {
   name             = "vif-foo"
   vlan             = 4094
   address_family   = "ipv4"
-  bgp_asn          = 65001
+  bgp_asn          = 65002
   dx_gateway_id    = aws_dx_gateway.this.id
-  customer_address = "10.0.0.1/28"
-  amazon_address   = "192.168.86.29"
-  bgp_auth_key = "1234567890"
+  amazon_address       = "1.1.1.1"
+  # customer_address     = "20.127.114.9"
+  # bgp_auth_key = "1234567890"
   tags = {
     "pvif" = "one"
   }
@@ -66,11 +66,4 @@ resource "aws_dx_public_virtual_interface" "this" {
 # This one can be used once the aws_dx_connection resource is available
 # data "aws_dx_connection" "this" {
 #   name = "tfx-connection-exmple"
-# }
-
-# Currently not available...
-# resource "aws_dx_bgp_peer" "this" {
-#   virtual_interface_id = aws_dx_private_virtual_interface.this.id
-#   address_family       = "ipv4"
-#   bgp_asn              = 65351
 # }
