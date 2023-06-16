@@ -46,7 +46,7 @@ func CreateBgpServer(asn int, ipAddress net.IP) (*server.BgpServer, error) {
 	return s, nil
 }
 
-func CreateBgpPeer(s *server.BgpServer, asn int, ipAddress net.IP) error {
+func CreateBGPPeer(s *server.BgpServer, asn int, ipAddress net.IP) error {
 	// Check for the correct ASN
 	if !checkASN(asn) {
 		return ErrorInvalidASN
