@@ -63,3 +63,11 @@ func (da Adapter) Sync() {
 		log.Fatalf("Error syncing database: %v", err)
 	}
 }
+
+func (da Adapter) GetKeys() ([][]byte, error) {
+	keys, err := da.db.Keys()
+	if err != nil {
+		return nil, err
+	}
+	return keys, nil
+}
