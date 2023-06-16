@@ -65,14 +65,21 @@ func CreateBgpPeer(s *server.BgpServer, asn int, ipAddress net.IP) error {
 		return err
 	}
 
+	return nil
+}
+
+// AddPath adds a path to the BGP server
+func AddPath(s *server.BgpServer, path net.IPNet) error {
+	prefixLengh, _ := path.Mask.Size()
 	nlri, _ := apb.New(&api.IPAddressPrefix{
-		Prefix:    "10.0.0.0",
-		PrefixLen: 24,
+		Prefix:    path.IP.String(),
+		PrefixLen: uint32(prefixLengh),
 	})
 
 	a1, _ := apb.New(&api.OriginAttribute{
 		Origin: 0,
 	})
+	//TODO: This is hardcoded fix.
 	a2, _ := apb.New(&api.NextHopAttribute{
 		NextHop: "10.0.0.1",
 	})
@@ -96,8 +103,6 @@ func CreateBgpPeer(s *server.BgpServer, asn int, ipAddress net.IP) error {
 	if err != nil {
 		return err
 	}
-
-	return nil
 }
 
 // GetPrimaryIP returns the primary IP address of the machine
