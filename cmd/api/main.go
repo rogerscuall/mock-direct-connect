@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"net"
 	"net/http"
 	"os"
 	"strings"
@@ -15,7 +16,7 @@ import (
 var (
 	dx                d.Connection
 	createBgpNeighbor bool
-	localBgpAsn 	 = 65001
+	localBgpAsn       = 65001
 )
 
 const (
@@ -53,8 +54,8 @@ func handleRequest(w http.ResponseWriter, r *http.Request) {
 	action := serviceAction[1]
 	log.Println("Request for: ", action)
 	switch action {
-	// case "CreateBgpPeer":
-	// 	CreateBgpPeer(w, r)
+	case "CreateBGPPeer":
+		CreateBGPPeer(w, r)
 	case "CreateConnection":
 		CreateConnection(w, r)
 	case "CreateDirectConnectGateway":
@@ -63,6 +64,8 @@ func handleRequest(w http.ResponseWriter, r *http.Request) {
 		CreatePrivateVirtualInterface(w, r)
 	case "CreatePublicVirtualInterface":
 		CreatePublicVirtualInterface(w, r)
+	case "DeleteBGPPeer":
+		DeleteBGPPeer(w, r)
 	case "DeleteConnection":
 		DeleteConnections(w, r)
 	case "DeleteDirectConnectGateway":
@@ -108,10 +111,21 @@ func main() {
 		if err != nil {
 			log.Panic("Error in creating BGP server", err)
 		}
-		log.Println("Creating BGP peer")
-		err = bgp.CreateBgpPeer(serverBgp)
+		vifs, err := GetActiveVirtualInterfaces()
 		if err != nil {
-			log.Panic("Error in creating BGP peer", err)
+			log.Panic("Error in getting active Virtual Interfaces", err)
+		}
+		vifs = GetVirtualInterfaceWithBgpPeers(vifs)
+		log.Println("Creating BGP peers")
+		for _, vif := range vifs {
+			log.Println("Virtual Interface:", vif.VirtualInterfaceID)
+			for _, bgpPeer := range vif.BGPPeers {
+				log.Println("BGP Peer:", bgpPeer.BGPPeerID)
+				err = bgp.CreateBgpPeer(serverBgp, bgpPeer.ASN, net.ParseIP(bgpPeer.CustomerAddress))
+				if err != nil {
+					log.Println("Error in creating BGP peer", err)
+				}
+			}
 		}
 	}
 	http.HandleFunc("/", handleRequest)
