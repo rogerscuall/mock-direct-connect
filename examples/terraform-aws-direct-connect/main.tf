@@ -29,32 +29,42 @@ resource "aws_dx_gateway" "this" {
   amazon_side_asn = "64512"
 }
 
-resource "aws_dx_private_virtual_interface" "this" {
-  connection_id = aws_dx_connection.this.id
+# resource "aws_dx_private_virtual_interface" "this" {
+#   connection_id = aws_dx_connection.this.id
 
-  name             = "vif-foo"
-  vlan             = 4094
-  address_family   = "ipv4"
-  bgp_asn          = 65002
-  dx_gateway_id    = aws_dx_gateway.this.id
-  amazon_address       = "1.1.1.1"
-  # customer_address     = "20.127.114.9"
-  # bgp_auth_key = "1234567890"
-  tags = {
-    "pvif" = "one"
-  }
+#   name             = "vif-foo"
+#   vlan             = 4094
+#   address_family   = "ipv4"
+#   bgp_asn          = 65002
+#   dx_gateway_id    = aws_dx_gateway.this.id
+#   amazon_address       = "1.1.1.1"
+#   # customer_address     = "20.127.114.9"
+#   # bgp_auth_key = "1234567890"
+#   tags = {
+#     "pvif" = "one"
+#   }
 
-}
+# }
 
 
 resource "aws_dx_bgp_peer" "peer" {
-  virtual_interface_id = aws_dx_private_virtual_interface.this.id
+  virtual_interface_id = aws_dx_transit_virtual_interface.example.id
   address_family       = "ipv4"
   bgp_asn              = 65002
   customer_address     = "20.127.114.9"
   bgp_auth_key         = "1234567890"
   # This address is ignored, use the address of the host running the mock server
   amazon_address       = "1.1.1.1"
+}
+
+resource "aws_dx_transit_virtual_interface" "example" {
+  connection_id = aws_dx_connection.this.id
+
+  dx_gateway_id  = aws_dx_gateway.this.id
+  name           = "tf-transit-vif-example"
+  vlan           = 4094
+  address_family = "ipv4"
+  bgp_asn        = 65005
 }
 
 # resource "aws_dx_public_virtual_interface" "this" {
