@@ -249,6 +249,54 @@ func CreatePublicVirtualInterface(w http.ResponseWriter, r *http.Request) {
 	returnOk(w, vif)
 }
 
+func CreateTransitVirtualInterface(w http.ResponseWriter, r *http.Request) {
+	vif, err := d.CreateTransitVirtualInterface(r)
+	if err != nil {
+		http.Error(w, "Bad request", http.StatusBadRequest)
+		return
+	}
+
+	vifDB, err := db.NewAdapter(dbNameVIF)
+	if err != nil {
+		log.Println("Error in creating connection to database", err)
+		http.Error(w, "Database Connection failure", http.StatusInternalServerError)
+		return
+	}
+	defer vifDB.CloseDbConnection()
+
+	err = vifDB.SetVal(vif.VirtualInterfaceID, vif)
+	if err != nil {
+		log.Println("Error in creating connection to database", err)
+		http.Error(w, "Database Connection failure", http.StatusInternalServerError)
+		return
+	}
+
+	// Update the tag database
+	resourceTag := d.ResourceTag{
+		ResourceArn: d.CreateARN("us-east-1", vif.VirtualInterfaceID),
+		Tags:        vif.Tags,
+	}
+
+	tagDB, err := db.NewAdapter(dbNameTags)
+	if err != nil {
+		log.Println("Error in creating connection to database", err)
+		http.Error(w, "Database Connection failure", http.StatusInternalServerError)
+		return
+	}
+	defer tagDB.CloseDbConnection()
+
+	err = tagDB.SetVal(vif.VirtualInterfaceID, resourceTag)
+	if err != nil {
+		log.Println("Error in creating connection to database", err)
+		http.Error(w, "Database Connection failure", http.StatusInternalServerError)
+		return
+	}
+	response := struct {
+		VirtualInterface d.TransitVirtualInterface `json:"virtualInterface"`
+	}{vif}
+	returnOk(w, response)
+}
+
 // A private virtual interface can be connected to either a Direct Connect gateway or a Virtual Private Gateway (VGW).
 func DescribeConnections(w http.ResponseWriter, r *http.Request) {
 	request, err := d.DescribeConnections(r)
