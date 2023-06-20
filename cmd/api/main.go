@@ -30,6 +30,8 @@ const (
 	dbNameVIF = "vifs"
 	// dbBgpPeer is the name of the DynamoDB table for BGP Peers
 	dbNameBgpPeer = "bgpPeers"
+	// dbTransitVIF is the name of the DynamoDB table for Transit Virtual Interfaces
+	dbNameTransitVIF = "transitvifs"
 )
 
 func handleRequest(w http.ResponseWriter, r *http.Request) {
@@ -64,6 +66,8 @@ func handleRequest(w http.ResponseWriter, r *http.Request) {
 		CreatePrivateVirtualInterface(w, r)
 	case "CreatePublicVirtualInterface":
 		CreatePublicVirtualInterface(w, r)
+	case "CreateTransitVirtualInterface":
+		CreateTransitVirtualInterface(w, r)
 	case "DeleteBGPPeer":
 		DeleteBGPPeer(w, r)
 	case "DeleteConnection":
