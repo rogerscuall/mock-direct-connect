@@ -32,6 +32,8 @@ const (
 	dbNameBgpPeer = "bgpPeers"
 	// dbTransitVIF is the name of the DynamoDB table for Transit Virtual Interfaces
 	dbNameTransitVIF = "transitvifs"
+	// dbDXGWyAssociation is the name of the DynamoDB table for Direct Connect Gateway Associations
+	dbNameDXGWyAssociation = "dxgwyassociations"
 )
 
 func handleRequest(w http.ResponseWriter, r *http.Request) {
@@ -54,7 +56,7 @@ func handleRequest(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	action := serviceAction[1]
-	log.Println("Request for: ", action)
+	log.Println("Request for:", action)
 	switch action {
 	case "CreateBGPPeer":
 		CreateBGPPeer(w, r)
@@ -62,6 +64,8 @@ func handleRequest(w http.ResponseWriter, r *http.Request) {
 		CreateConnection(w, r)
 	case "CreateDirectConnectGateway":
 		CreateDXGateway(w, r)
+	case "CreateDirectConnectGatewayAssociation":
+		CreateDirectConnectGatewayAssociation(w, r)
 	case "CreatePrivateVirtualInterface":
 		CreatePrivateVirtualInterface(w, r)
 	case "CreatePublicVirtualInterface":
@@ -74,12 +78,16 @@ func handleRequest(w http.ResponseWriter, r *http.Request) {
 		DeleteConnections(w, r)
 	case "DeleteDirectConnectGateway":
 		DeleteDXGateway(w, r)
+	case "DeleteDirectConnectGatewayAssociation":
+		DeleteDirectConnectGatewayAssociation(w, r)
 	case "DeleteVirtualInterface":
 		DeleteVirtualInterface(w, r)
 	case "DescribeConnections":
 		DescribeConnections(w, r)
 	case "DescribeDirectConnectGateways":
 		DescribeDXGateways(w, r)
+	case "DescribeDirectConnectGatewayAssociations":
+		DescribeDirectConnectGatewayAssociations(w, r)
 	case "DescribeVirtualInterfaces":
 		DescribeVirtualInterfaces(w, r)
 	case "DescribeTags":

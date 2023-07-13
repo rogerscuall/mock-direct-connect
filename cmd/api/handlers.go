@@ -155,6 +155,30 @@ func CreateDXGateway(w http.ResponseWriter, r *http.Request) {
 	returnOk(w, response)
 }
 
+// CreateDirectConnectGatewayAssociation creates a Direct Connect Gateway Association.
+func CreateDirectConnectGatewayAssociation(w http.ResponseWriter, r *http.Request) {
+	dxGwAsso, err := d.CreateDirectConnectGatewayAssociation(r)
+	if err != nil {
+		http.Error(w, "Bad request", http.StatusBadRequest)
+		return
+	}
+	dxGwDBAssociation, err := db.NewAdapter(dbNameDXGWyAssociation)
+	if err != nil {
+		log.Println("Error in creating connection to database", err)
+		http.Error(w, "Database Connection failure", http.StatusInternalServerError)
+		return
+	}
+
+	defer dxGwDBAssociation.CloseDbConnection()
+
+	err = dxGwDBAssociation.SetVal(dxGwAsso.DirectConnectGatewayAssociation.AssociationId, dxGwAsso)
+	if err != nil {
+		log.Println("Error in creating connection to database", err)
+		http.Error(w, "Database Connection failure", http.StatusInternalServerError)
+	}
+	returnOk(w, dxGwAsso)
+}
+
 // CreatePrivateVirtualInterface
 func CreatePrivateVirtualInterface(w http.ResponseWriter, r *http.Request) {
 	vif, err := d.CreatePrivateVirtualInterface(r)
@@ -326,6 +350,68 @@ func DescribeConnections(w http.ResponseWriter, r *http.Request) {
 
 	response.Connections = append(response.Connections, dx)
 	json.NewEncoder(w).Encode(response)
+}
+
+// DescribeDirectConnectGatewayAssociations is the handler for the "DescribeDirectConnectGatewayAssociations" API
+func DescribeDirectConnectGatewayAssociations(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		AssociatedGateway      string `json:"associatedGateway"`
+		AssociationId          string `json:"associationId"`
+		DirectConnectGatewayId string `json:"directConnectGatewayId"`
+		MaxResults             int    `json:"maxResults"`
+		NextToken              string `json:"nextToken"`
+		VirtualGatewayId       string `json:"virtualGatewayId"`
+	}
+	err := d.RequestToJson(r, &req)
+	if err != nil {
+		http.Error(w, "Bad request", http.StatusBadRequest)
+		return
+	}
+
+	dxgwDB, err := db.NewAdapter(dbNameDXGWyAssociation)
+	if err != nil {
+		log.Println("Error in creating connection to database", err)
+		http.Error(w, "Database Connection failure", http.StatusInternalServerError)
+		return
+	}
+
+	defer dxgwDB.CloseDbConnection()
+
+	// Get all the keys from the database
+	keys, err := dxgwDB.GetKeys()
+	if err != nil {
+		log.Println("Error in getting keys from database", err)
+		http.Error(w, "Database Connection failure", http.StatusInternalServerError)
+		return
+	}
+
+	associations := []d.DirectConnectGatewayAssociationResponse{}
+	// Iterate over the keys and get the values
+	for _, key := range keys {
+		var dxGwAsso d.DirectConnectGatewayAssociationResponse
+		err = dxgwDB.GetVal(string(key), &dxGwAsso)
+		if err != nil {
+			log.Println("Error in getting values from database", err)
+			http.Error(w, "Database Connection failure", http.StatusInternalServerError)
+			return
+		}
+		associations = append(associations, dxGwAsso)
+	}
+
+	type response struct {
+		DirectConnectGatewayAssociations []d.DirectConnectGatewayAssociation `json:"directConnectGatewayAssociations"`
+		NextToken                        string                              `json:"nextToken"`
+	}
+
+	var resp response
+	resp.DirectConnectGatewayAssociations = []d.DirectConnectGatewayAssociation{}
+	for _, association := range associations {
+		if association.DirectConnectGatewayAssociation.AssociationId == req.AssociationId {
+			resp.DirectConnectGatewayAssociations = append(resp.DirectConnectGatewayAssociations, association.DirectConnectGatewayAssociation)
+		}
+	}
+	returnOk(w, resp)
+
 }
 
 // DescribeVirtualInterfaces
@@ -561,6 +647,43 @@ func DeleteDXGateway(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusOK)
+}
+
+// DeleteDirectConnectGatewayAssociation deletes a Direct Connect Gateway Association.
+func DeleteDirectConnectGatewayAssociation(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		AssociationID string `json:"associationId"`
+		DirectConnectGatewayId string `json:"directConnectGatewayId"`
+		VirtualGatewayId string `json:"virtualGatewayId"`
+	}
+	err := d.RequestToJson(r, &req)
+	if err != nil {
+		http.Error(w, "Bad request", http.StatusBadRequest)
+		return
+	}
+	dxgwDB, err := db.NewAdapter(dbNameDXGWyAssociation)
+	if err != nil {
+		log.Println("Error in creating connection to database", err)
+		http.Error(w, "Database Connection failure", http.StatusInternalServerError)
+		return
+	}
+	
+	defer dxgwDB.CloseDbConnection()
+
+	var dxGwAsso d.DirectConnectGatewayAssociationResponse
+	err = dxgwDB.GetVal(req.AssociationID, &dxGwAsso)
+	if err != nil {
+		log.Println("Error in getting connection ID from database", err)
+		http.Error(w, "Internal Error", http.StatusInternalServerError)
+		return
+	}
+	dxGwAsso.DirectConnectGatewayAssociation.AssociationState = "disassociated"
+	err = dxgwDB.SetVal(req.AssociationID, dxGwAsso)
+	if err != nil {
+		log.Println("Error in creating connection to database", err)
+		http.Error(w, "Database Connection failure", http.StatusInternalServerError)
+	}
+	returnOk(w, dxGwAsso)
 }
 
 // DeleteVirtualInterface deletes a virtual interface.

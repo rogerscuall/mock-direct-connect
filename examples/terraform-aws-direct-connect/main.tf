@@ -26,7 +26,40 @@ resource "aws_dx_connection" "this" {
 
 resource "aws_dx_gateway" "this" {
   name            = "tf-dxg-exampl123"
-  amazon_side_asn = "64512"
+  amazon_side_asn = "65001"
+}
+
+resource "aws_dx_bgp_peer" "peer" {
+  virtual_interface_id = aws_dx_transit_virtual_interface.example.id
+  address_family       = "ipv4"
+  bgp_asn              = 65002
+  # This address is the remote address.
+  customer_address     = "74.235.253.85"
+  bgp_auth_key         = "1234567890"
+  # This address is ignored, use the address of the host running the mock server
+  amazon_address       = "1.1.1.1"
+}
+
+resource "aws_dx_transit_virtual_interface" "example" {
+  connection_id = aws_dx_connection.this.id
+
+  dx_gateway_id  = aws_dx_gateway.this.id
+  name           = "tf-transit-vif-example"
+  vlan           = 4094
+  address_family = "ipv4"
+  bgp_asn        = 65005
+}
+
+resource "aws_dx_gateway_association" "example" {
+  dx_gateway_id         = aws_dx_gateway.this.id
+  # TGW belongs to the EC2 service we only mocking the Direct Connect service
+  # Use a fake TGW ID to avoid errors
+  associated_gateway_id = "tgw-12345678"
+
+  allowed_prefixes = [
+    "10.255.255.0/30",
+    "10.255.255.8/30",
+  ]
 }
 
 # resource "aws_dx_private_virtual_interface" "this" {
@@ -45,27 +78,6 @@ resource "aws_dx_gateway" "this" {
 #   }
 
 # }
-
-
-resource "aws_dx_bgp_peer" "peer" {
-  virtual_interface_id = aws_dx_transit_virtual_interface.example.id
-  address_family       = "ipv4"
-  bgp_asn              = 65002
-  customer_address     = "20.127.114.9"
-  bgp_auth_key         = "1234567890"
-  # This address is ignored, use the address of the host running the mock server
-  amazon_address       = "1.1.1.1"
-}
-
-resource "aws_dx_transit_virtual_interface" "example" {
-  connection_id = aws_dx_connection.this.id
-
-  dx_gateway_id  = aws_dx_gateway.this.id
-  name           = "tf-transit-vif-example"
-  vlan           = 4094
-  address_family = "ipv4"
-  bgp_asn        = 65005
-}
 
 # resource "aws_dx_public_virtual_interface" "this" {
 #   connection_id = aws_dx_connection.this.id

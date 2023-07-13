@@ -35,3 +35,15 @@ func GetIDFromARN(arn string) (string, error) {
 	}
 	return splitArn[1], nil
 }
+
+// createDxGatewayAssociationID create a random string representing the DXGatewayAssociation ID
+// Example is : 86bb6da8-c587-4b3d-89a5-f8335defc5ad
+func createDxGatewayAssociationID() string {
+	return fmt.Sprintf("%s-%s-%s-%s-%s",
+		randomString(8),
+		randomString(4),
+		randomString(4),
+		randomString(4),
+		randomString(12),
+	)
+}
