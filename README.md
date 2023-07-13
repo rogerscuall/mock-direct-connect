@@ -25,7 +25,6 @@ The following API calls are implemented:
 * UpdateConnection
 * UpdateDXGateway
 
-
 ## How to install
 
 Download the binary from the [release page](https://github.com/rogerscuall/mock-direct-connect/releases) and put it in your path.
