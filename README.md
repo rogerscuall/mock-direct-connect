@@ -61,4 +61,4 @@ This like is very useful [AWS Direct API.](https://frichetten.com/blog/aws-api-p
 ### BGP Peer
 
 To use this feature create the ENVAR `export CREATE_BGP_NEIGHBOR=true` before running the mock.
-The localhost for the mock will be assigned all the values related to AWS. Currently the values are ignored and ASN is 65001 and the IP address is the primary IP address of the main interface.
+When `CREATE_BGP_NEIGHBOR==true` the localhost (host where the mock is running) will run BGP with ASN 65001, the IP address would be the primary IP address of the main interface, the mock will auto-discovery this IP. You should see the log similar to this: `2023/07/13 17:22:50 BGP Peer: 1.2.3.4`
