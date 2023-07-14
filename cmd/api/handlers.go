@@ -11,7 +11,7 @@ import (
 // CreateBGPPeer creates a BGP Peer.
 // It checks if the Virtual Interface exists in the database and is available.
 // If it is it will add the BGP Peer to the Virtual Interface.
-func CreateBGPPeer(w http.ResponseWriter, r *http.Request) {
+func (a *application) CreateBGPPeer(w http.ResponseWriter, r *http.Request) {
 	var req d.CreateBgpPeerRequest
 	err := d.RequestToJson(r, &req)
 	if err != nil {
@@ -75,7 +75,7 @@ func CreateBGPPeer(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func CreateConnection(w http.ResponseWriter, r *http.Request) {
+func (a *application) CreateConnection(w http.ResponseWriter, r *http.Request) {
 	dx, err := d.CreateConnection(r)
 	if err != nil {
 		http.Error(w, "Bad request", http.StatusBadRequest)
@@ -124,7 +124,7 @@ func CreateConnection(w http.ResponseWriter, r *http.Request) {
 
 // CreateDXGateway creates a Direct Connect Gateway.
 // Updates the DB.
-func CreateDXGateway(w http.ResponseWriter, r *http.Request) {
+func (a *application) CreateDXGateway(w http.ResponseWriter, r *http.Request) {
 	g, err := d.CreateDXGateway(r)
 	if err != nil {
 		http.Error(w, "Bad request", http.StatusBadRequest)
@@ -156,7 +156,7 @@ func CreateDXGateway(w http.ResponseWriter, r *http.Request) {
 }
 
 // CreateDirectConnectGatewayAssociation creates a Direct Connect Gateway Association.
-func CreateDirectConnectGatewayAssociation(w http.ResponseWriter, r *http.Request) {
+func (a *application) CreateDirectConnectGatewayAssociation(w http.ResponseWriter, r *http.Request) {
 	dxGwAsso, err := d.CreateDirectConnectGatewayAssociation(r)
 	if err != nil {
 		http.Error(w, "Bad request", http.StatusBadRequest)
@@ -180,7 +180,7 @@ func CreateDirectConnectGatewayAssociation(w http.ResponseWriter, r *http.Reques
 }
 
 // CreatePrivateVirtualInterface
-func CreatePrivateVirtualInterface(w http.ResponseWriter, r *http.Request) {
+func (a *application) CreatePrivateVirtualInterface(w http.ResponseWriter, r *http.Request) {
 	vif, err := d.CreatePrivateVirtualInterface(r)
 	if err != nil {
 		http.Error(w, "Bad request", http.StatusBadRequest)
@@ -227,7 +227,7 @@ func CreatePrivateVirtualInterface(w http.ResponseWriter, r *http.Request) {
 }
 
 // CreatePublicVirtualInterface
-func CreatePublicVirtualInterface(w http.ResponseWriter, r *http.Request) {
+func (a *application) CreatePublicVirtualInterface(w http.ResponseWriter, r *http.Request) {
 	vif, err := d.CreatePublicVirtualInterface(r)
 	if err != nil {
 		http.Error(w, "Bad request", http.StatusBadRequest)
@@ -273,7 +273,7 @@ func CreatePublicVirtualInterface(w http.ResponseWriter, r *http.Request) {
 	returnOk(w, vif)
 }
 
-func CreateTransitVirtualInterface(w http.ResponseWriter, r *http.Request) {
+func (a *application) CreateTransitVirtualInterface(w http.ResponseWriter, r *http.Request) {
 	vif, err := d.CreateTransitVirtualInterface(r)
 	if err != nil {
 		http.Error(w, "Bad request", http.StatusBadRequest)
@@ -322,7 +322,7 @@ func CreateTransitVirtualInterface(w http.ResponseWriter, r *http.Request) {
 }
 
 // A private virtual interface can be connected to either a Direct Connect gateway or a Virtual Private Gateway (VGW).
-func DescribeConnections(w http.ResponseWriter, r *http.Request) {
+func (a *application) DescribeConnections(w http.ResponseWriter, r *http.Request) {
 	request, err := d.DescribeConnections(r)
 	if err != nil {
 		http.Error(w, "Bad request", http.StatusBadRequest)
@@ -353,7 +353,7 @@ func DescribeConnections(w http.ResponseWriter, r *http.Request) {
 }
 
 // DescribeDirectConnectGatewayAssociations is the handler for the "DescribeDirectConnectGatewayAssociations" API
-func DescribeDirectConnectGatewayAssociations(w http.ResponseWriter, r *http.Request) {
+func (a *application) DescribeDirectConnectGatewayAssociations(w http.ResponseWriter, r *http.Request) {
 	var req struct {
 		AssociatedGateway      string `json:"associatedGateway"`
 		AssociationId          string `json:"associationId"`
@@ -415,7 +415,7 @@ func DescribeDirectConnectGatewayAssociations(w http.ResponseWriter, r *http.Req
 }
 
 // DescribeVirtualInterfaces
-func DescribeVirtualInterfaces(w http.ResponseWriter, r *http.Request) {
+func (a *application) DescribeVirtualInterfaces(w http.ResponseWriter, r *http.Request) {
 	var req struct {
 		VirtualInterfaceID string `json:"virtualInterfaceId"`
 		ConnectionID       string `json:"connectionId"`
@@ -451,7 +451,7 @@ func DescribeVirtualInterfaces(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(response)
 }
 
-func DescribeTags(w http.ResponseWriter, r *http.Request) {
+func (a *application) DescribeTags(w http.ResponseWriter, r *http.Request) {
 	request, err := d.DescribeTags(r)
 	if err != nil {
 		http.Error(w, "Bad request", http.StatusBadRequest)
@@ -490,7 +490,7 @@ func DescribeTags(w http.ResponseWriter, r *http.Request) {
 
 // DescribeDXGateways returns a list of Direct Connect Gateways.
 // DXGWYs in deleted state are not returned.
-func DescribeDXGateways(w http.ResponseWriter, r *http.Request) {
+func (a *application) DescribeDXGateways(w http.ResponseWriter, r *http.Request) {
 	request, err := d.DescribeDXGateways(r)
 	if err != nil {
 		http.Error(w, "Bad request", http.StatusBadRequest)
@@ -525,7 +525,7 @@ func DescribeDXGateways(w http.ResponseWriter, r *http.Request) {
 // Check if the Virtual Interface exists in the database.
 // Check if the BGP Peer exists in the Virtual Interface.
 // Change the state of the BGP Peer to deleted and the status to down.
-func DeleteBGPPeer(w http.ResponseWriter, r *http.Request) {
+func (a *application) DeleteBGPPeer(w http.ResponseWriter, r *http.Request) {
 	var req struct {
 		ASN                int    `json:"asn"`
 		BGPPeerID          string `json:"bgpPeerId"`
@@ -574,7 +574,7 @@ func DeleteBGPPeer(w http.ResponseWriter, r *http.Request) {
 }
 
 // DeleteConnections deletes a connection.
-func DeleteConnections(w http.ResponseWriter, r *http.Request) {
+func (a *application) DeleteConnections(w http.ResponseWriter, r *http.Request) {
 	var req struct {
 		ConnectionID string `json:"connectionId"`
 	}
@@ -614,7 +614,7 @@ func DeleteConnections(w http.ResponseWriter, r *http.Request) {
 }
 
 // DeleteDXGateway deletes a Direct Connect Gateway.
-func DeleteDXGateway(w http.ResponseWriter, r *http.Request) {
+func (a *application) DeleteDXGateway(w http.ResponseWriter, r *http.Request) {
 	request, err := d.DeleteDXGateway(r)
 	if err != nil {
 		http.Error(w, "Bad request", http.StatusBadRequest)
@@ -650,11 +650,11 @@ func DeleteDXGateway(w http.ResponseWriter, r *http.Request) {
 }
 
 // DeleteDirectConnectGatewayAssociation deletes a Direct Connect Gateway Association.
-func DeleteDirectConnectGatewayAssociation(w http.ResponseWriter, r *http.Request) {
+func (a *application) DeleteDirectConnectGatewayAssociation(w http.ResponseWriter, r *http.Request) {
 	var req struct {
-		AssociationID string `json:"associationId"`
+		AssociationID          string `json:"associationId"`
 		DirectConnectGatewayId string `json:"directConnectGatewayId"`
-		VirtualGatewayId string `json:"virtualGatewayId"`
+		VirtualGatewayId       string `json:"virtualGatewayId"`
 	}
 	err := d.RequestToJson(r, &req)
 	if err != nil {
@@ -667,7 +667,7 @@ func DeleteDirectConnectGatewayAssociation(w http.ResponseWriter, r *http.Reques
 		http.Error(w, "Database Connection failure", http.StatusInternalServerError)
 		return
 	}
-	
+
 	defer dxgwDB.CloseDbConnection()
 
 	var dxGwAsso d.DirectConnectGatewayAssociationResponse
@@ -687,7 +687,7 @@ func DeleteDirectConnectGatewayAssociation(w http.ResponseWriter, r *http.Reques
 }
 
 // DeleteVirtualInterface deletes a virtual interface.
-func DeleteVirtualInterface(w http.ResponseWriter, r *http.Request) {
+func (a *application) DeleteVirtualInterface(w http.ResponseWriter, r *http.Request) {
 	var req struct {
 		VirtualInterfaceID string `json:"virtualInterfaceId"`
 	}
@@ -726,7 +726,7 @@ func DeleteVirtualInterface(w http.ResponseWriter, r *http.Request) {
 }
 
 // TagResource tags a resource
-func TagResource(w http.ResponseWriter, r *http.Request) {
+func (a *application) TagResource(w http.ResponseWriter, r *http.Request) {
 	resourceTag, err := d.TagResource(r)
 	if err != nil {
 		http.Error(w, "Bad request", http.StatusBadRequest)
@@ -760,7 +760,7 @@ func TagResource(w http.ResponseWriter, r *http.Request) {
 
 // UpdateDXGateway updates a Direct Connect Gateway.
 // Updates the DB.
-func UpdateDXGateway(w http.ResponseWriter, r *http.Request) {
+func (a *application) UpdateDXGateway(w http.ResponseWriter, r *http.Request) {
 	request, err := d.UpdateDXGateway(r)
 	if err != nil {
 		http.Error(w, "Bad request", http.StatusBadRequest)

@@ -2,19 +2,23 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
+	"flag"
 	"log"
 	"net"
 	"net/http"
 	"os"
 	"strings"
+	"sync"
 
 	"dx-mock/pkg/bgp"
 	d "dx-mock/pkg/dx"
+
+	"github.com/osrg/gobgp/v3/pkg/server"
 )
 
 var (
 	dx                d.Connection
+	logMinLevel       string
 	createBgpNeighbor bool
 	localBgpAsn       = 65001
 )
@@ -27,7 +31,7 @@ const (
 	// dbNameDXGwy is the name of the DynamoDB table for Direct Connect Gateways
 	dbNameDXGwy = "dxgwys"
 	// dbNameVIF is the name of the DynamoDB table for Virtual Interfaces
-	dbNameVIF = "vifs"
+	dbNameVIF = "vifs2"
 	// dbBgpPeer is the name of the DynamoDB table for BGP Peers
 	dbNameBgpPeer = "bgpPeers"
 	// dbTransitVIF is the name of the DynamoDB table for Transit Virtual Interfaces
@@ -36,7 +40,23 @@ const (
 	dbNameDXGWyAssociation = "dxgwyassociations"
 )
 
-func handleRequest(w http.ResponseWriter, r *http.Request) {
+type config struct {
+	port int
+	env  string
+}
+
+type application struct {
+	config      config
+	logger      *CustomLogger
+	wg          sync.WaitGroup
+	createBGP   bool
+	primaryIP   net.IP
+	serverBgp   *server.BgpServer
+	localBgpAsn int
+	bgpPeers    []d.BGPConfig
+}
+
+func (a *application) handleRequest(w http.ResponseWriter, r *http.Request) {
 	// Get the Content-Type
 	contentType := r.Header.Get("Content-Type")
 	if contentType != "application/x-amz-json-1.1" {
@@ -59,41 +79,41 @@ func handleRequest(w http.ResponseWriter, r *http.Request) {
 	log.Println("Request for:", action)
 	switch action {
 	case "CreateBGPPeer":
-		CreateBGPPeer(w, r)
+		a.CreateBGPPeer(w, r)
 	case "CreateConnection":
-		CreateConnection(w, r)
+		a.CreateConnection(w, r)
 	case "CreateDirectConnectGateway":
-		CreateDXGateway(w, r)
+		a.CreateDXGateway(w, r)
 	case "CreateDirectConnectGatewayAssociation":
-		CreateDirectConnectGatewayAssociation(w, r)
+		a.CreateDirectConnectGatewayAssociation(w, r)
 	case "CreatePrivateVirtualInterface":
-		CreatePrivateVirtualInterface(w, r)
+		a.CreatePrivateVirtualInterface(w, r)
 	case "CreatePublicVirtualInterface":
-		CreatePublicVirtualInterface(w, r)
+		a.CreatePublicVirtualInterface(w, r)
 	case "CreateTransitVirtualInterface":
-		CreateTransitVirtualInterface(w, r)
+		a.CreateTransitVirtualInterface(w, r)
 	case "DeleteBGPPeer":
-		DeleteBGPPeer(w, r)
+		a.DeleteBGPPeer(w, r)
 	case "DeleteConnection":
-		DeleteConnections(w, r)
+		a.DeleteConnections(w, r)
 	case "DeleteDirectConnectGateway":
-		DeleteDXGateway(w, r)
+		a.DeleteDXGateway(w, r)
 	case "DeleteDirectConnectGatewayAssociation":
-		DeleteDirectConnectGatewayAssociation(w, r)
+		a.DeleteDirectConnectGatewayAssociation(w, r)
 	case "DeleteVirtualInterface":
-		DeleteVirtualInterface(w, r)
+		a.DeleteVirtualInterface(w, r)
 	case "DescribeConnections":
-		DescribeConnections(w, r)
+		a.DescribeConnections(w, r)
 	case "DescribeDirectConnectGateways":
-		DescribeDXGateways(w, r)
+		a.DescribeDXGateways(w, r)
 	case "DescribeDirectConnectGatewayAssociations":
-		DescribeDirectConnectGatewayAssociations(w, r)
+		a.DescribeDirectConnectGatewayAssociations(w, r)
 	case "DescribeVirtualInterfaces":
-		DescribeVirtualInterfaces(w, r)
+		a.DescribeVirtualInterfaces(w, r)
 	case "DescribeTags":
-		DescribeTags(w, r)
+		a.DescribeTags(w, r)
 	case "TagResource":
-		TagResource(w, r)
+		a.TagResource(w, r)
 	case "UpdateConnection":
 		err := d.UpdateConnection(r, &dx)
 		if err != nil {
@@ -105,21 +125,39 @@ func handleRequest(w http.ResponseWriter, r *http.Request) {
 
 		return
 	case "UpdateDirectConnectGateway":
-		UpdateDXGateway(w, r)
+		a.UpdateDXGateway(w, r)
 	}
 }
 
 func main() {
+	var err error
+	var cfg config
+
+	flag.IntVar(&cfg.port, "port", 8080, "Port to listen on")
+	flag.StringVar(&logMinLevel, "log", "INFO", "LOG LEVEL (DEBUG|INFO|WARNING|ERROR)")
+	flag.IntVar(&localBgpAsn, "asn", 65001, "Local BGP ASN")
+
 	// Load createBgpNeighbor from the environment variable CREATE_BGP_NEIGHBOR
 	createBgpNeighbor = os.Getenv("CREATE_BGP_NEIGHBOR") == "true"
-	log.Println("The value of createBgpNeighbor is:", createBgpNeighbor)
-	if createBgpNeighbor {
-		log.Println("Creating BGP service")
-		ipAddress, err := bgp.GetPrimaryIP()
+
+	logLevel := NewCustomLogger(logMinLevel)
+
+	a := &application{
+		config:      cfg,
+		createBGP:   createBgpNeighbor,
+		logger:      logLevel,
+		localBgpAsn: localBgpAsn,
+	}
+
+	a.logger.Info("the value of createBgpNeighbor is:", createBgpNeighbor)
+	if a.createBGP {
+		a.logger.Info("creating BGP service")
+		a.primaryIP, err = bgp.GetPrimaryIP()
 		if err != nil {
-			log.Panic("Error in getting primary IP address", err)
+			a.logger.Error("error in getting primary IP address", err)
+			os.Exit(1)
 		}
-		serverBgp, err := bgp.CreateBgpServer(localBgpAsn, ipAddress)
+		a.serverBgp, err = bgp.CreateBgpServer(a.localBgpAsn, a.primaryIP)
 		if err != nil {
 			log.Panic("Error in creating BGP server", err)
 		}
@@ -133,14 +171,19 @@ func main() {
 			log.Println("Virtual Interface:", vif.VirtualInterfaceID)
 			for _, bgpPeer := range vif.BGPPeers {
 				log.Println("BGP Peer:", bgpPeer.BGPPeerID)
-				err = bgp.CreateBGPPeer(serverBgp, bgpPeer.ASN, net.ParseIP(bgpPeer.CustomerAddress))
+				err = bgp.CreateBGPPeer(a.serverBgp, bgpPeer.ASN, net.ParseIP(bgpPeer.CustomerAddress))
 				if err != nil {
 					log.Println("Error in creating BGP peer", err)
 				}
+				a.bgpPeers = append(a.bgpPeers, bgpPeer)
 			}
 		}
 	}
-	http.HandleFunc("/", handleRequest)
-	fmt.Println("Mock Direct Connect API server listening on port 8080")
-	http.ListenAndServe(":8080", nil)
+	//http.HandleFunc("/",a.handleRequest)
+	err = a.serve()
+	if err != nil {
+		a.logger.Error(err)
+	}
+	// fmt.Println("Mock Direct Connect API server listening on port 8080")
+	// http.ListenAndServe(":8080", nil)
 }
