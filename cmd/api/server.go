@@ -67,7 +67,7 @@ func (a *application) serve() error {
 
 	}()
 
-	a.logger.Info("starting server on port", a.config.port)
+	a.logger.Info("starting server on port ", a.config.port)
 
 	err := srv.ListenAndServe()
 	if !errors.Is(err, http.ErrServerClosed) {

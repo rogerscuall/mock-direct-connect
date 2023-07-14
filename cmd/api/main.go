@@ -1,13 +1,10 @@
 package main
 
 import (
-	"encoding/json"
 	"flag"
 	"log"
 	"net"
-	"net/http"
 	"os"
-	"strings"
 	"sync"
 
 	"dx-mock/pkg/bgp"
@@ -17,7 +14,6 @@ import (
 )
 
 var (
-	dx                d.Connection
 	logMinLevel       string
 	createBgpNeighbor bool
 	localBgpAsn       = 65001
@@ -33,16 +29,16 @@ const (
 	// dbNameVIF is the name of the DynamoDB table for Virtual Interfaces
 	dbNameVIF = "vifs2"
 	// dbBgpPeer is the name of the DynamoDB table for BGP Peers
-	dbNameBgpPeer = "bgpPeers"
+	//dbNameBgpPeer = "bgpPeers"
 	// dbTransitVIF is the name of the DynamoDB table for Transit Virtual Interfaces
-	dbNameTransitVIF = "transitvifs"
+	//dbNameTransitVIF = "transitvifs"
 	// dbDXGWyAssociation is the name of the DynamoDB table for Direct Connect Gateway Associations
 	dbNameDXGWyAssociation = "dxgwyassociations"
 )
 
 type config struct {
 	port int
-	env  string
+	//env  string
 }
 
 type application struct {
@@ -54,79 +50,6 @@ type application struct {
 	serverBgp   *server.BgpServer
 	localBgpAsn int
 	bgpPeers    []d.BGPConfig
-}
-
-func (a *application) handleRequest(w http.ResponseWriter, r *http.Request) {
-	// Get the Content-Type
-	contentType := r.Header.Get("Content-Type")
-	if contentType != "application/x-amz-json-1.1" {
-		log.Println("Content-Type is not application/x-amz-json-1.1")
-	}
-	// Get the target
-	serviceAction := strings.Split(r.Header.Get("X-Amz-Target"), ".")
-	if len(serviceAction) != 2 {
-		log.Println("X-Amz-Target is not in the correct format")
-		http.Error(w, "Bad request", http.StatusBadRequest)
-		return
-	}
-	service := serviceAction[0]
-	if service != "OvertureService" {
-		log.Println("Service is not OvertureService")
-		http.Error(w, "Bad request", http.StatusBadRequest)
-		return
-	}
-	action := serviceAction[1]
-	log.Println("Request for:", action)
-	switch action {
-	case "CreateBGPPeer":
-		a.CreateBGPPeer(w, r)
-	case "CreateConnection":
-		a.CreateConnection(w, r)
-	case "CreateDirectConnectGateway":
-		a.CreateDXGateway(w, r)
-	case "CreateDirectConnectGatewayAssociation":
-		a.CreateDirectConnectGatewayAssociation(w, r)
-	case "CreatePrivateVirtualInterface":
-		a.CreatePrivateVirtualInterface(w, r)
-	case "CreatePublicVirtualInterface":
-		a.CreatePublicVirtualInterface(w, r)
-	case "CreateTransitVirtualInterface":
-		a.CreateTransitVirtualInterface(w, r)
-	case "DeleteBGPPeer":
-		a.DeleteBGPPeer(w, r)
-	case "DeleteConnection":
-		a.DeleteConnections(w, r)
-	case "DeleteDirectConnectGateway":
-		a.DeleteDXGateway(w, r)
-	case "DeleteDirectConnectGatewayAssociation":
-		a.DeleteDirectConnectGatewayAssociation(w, r)
-	case "DeleteVirtualInterface":
-		a.DeleteVirtualInterface(w, r)
-	case "DescribeConnections":
-		a.DescribeConnections(w, r)
-	case "DescribeDirectConnectGateways":
-		a.DescribeDXGateways(w, r)
-	case "DescribeDirectConnectGatewayAssociations":
-		a.DescribeDirectConnectGatewayAssociations(w, r)
-	case "DescribeVirtualInterfaces":
-		a.DescribeVirtualInterfaces(w, r)
-	case "DescribeTags":
-		a.DescribeTags(w, r)
-	case "TagResource":
-		a.TagResource(w, r)
-	case "UpdateConnection":
-		err := d.UpdateConnection(r, &dx)
-		if err != nil {
-			http.Error(w, "Bad request", http.StatusBadRequest)
-			return
-		}
-
-		json.NewEncoder(w).Encode(dx)
-
-		return
-	case "UpdateDirectConnectGateway":
-		a.UpdateDXGateway(w, r)
-	}
 }
 
 func main() {
@@ -149,7 +72,7 @@ func main() {
 		localBgpAsn: localBgpAsn,
 	}
 
-	a.logger.Info("the value of createBgpNeighbor is:", createBgpNeighbor)
+	a.logger.Info("the value of createBgpNeighbor is: ", createBgpNeighbor)
 	if a.createBGP {
 		a.logger.Info("creating BGP service")
 		a.primaryIP, err = bgp.GetPrimaryIP()
