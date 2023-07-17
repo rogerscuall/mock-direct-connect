@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"dx-mock/pkg/bgp"
 	"errors"
 	"fmt"
 	"net"
@@ -10,7 +11,6 @@ import (
 	"os/signal"
 	"syscall"
 	"time"
-	"dx-mock/pkg/bgp"
 )
 
 func (a *application) serve() error {
@@ -45,6 +45,10 @@ func (a *application) serve() error {
 		if a.createBGP {
 			a.logger.Info("removing BGP peers")
 			for _, bgpPeer := range a.bgpPeers {
+				// Check if the BGP peer is still active
+				if bgpPeer.BGPPeerState != "active" {
+					continue
+				}
 				err = bgp.DeleteBGPPeer(a.serverBgp, bgpPeer.ASN, net.ParseIP(bgpPeer.CustomerAddress))
 				if err != nil {
 					a.logger.Info("error in deleting BGP peer ", err)

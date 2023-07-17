@@ -205,6 +205,7 @@ func CreatePrivateVirtualInterface(r *http.Request) (PrivateVirtualInterface, er
 	pvif.AwsDeviceV2 = "virtual"
 	pvif.AwsLogicalDeviceID = "virtual"
 	pvif.JumboFrameCapable = false
+	pvif.MTU = req.NewPrivateVirtualInterface.MTU
 	//pvif.VirtualInterfaceName = req.NewPrivateVirtualInterface.VirtualInterfaceName
 
 	return pvif, nil

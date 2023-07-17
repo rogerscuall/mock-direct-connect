@@ -40,6 +40,17 @@ resource "aws_dx_bgp_peer" "peer" {
   amazon_address       = "1.1.1.1"
 }
 
+resource "aws_dx_bgp_peer" "peer1" {
+  virtual_interface_id = aws_dx_transit_virtual_interface.example.id
+  address_family       = "ipv4"
+  bgp_asn              = 65002
+  # This address is the remote address.
+  customer_address     = "74.235.253.86"
+  bgp_auth_key         = "1234567890"
+  # This address is ignored, use the address of the host running the mock server
+  amazon_address       = "1.1.1.1"
+}
+
 resource "aws_dx_transit_virtual_interface" "example" {
   connection_id = aws_dx_connection.this.id
 
@@ -48,6 +59,7 @@ resource "aws_dx_transit_virtual_interface" "example" {
   vlan           = 4094
   address_family = "ipv4"
   bgp_asn        = 65005
+  mtu           = 1500
 }
 
 resource "aws_dx_gateway_association" "example" {

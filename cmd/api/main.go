@@ -92,11 +92,15 @@ func main() {
 			os.Exit(1)
 		}
 		vifs = GetVirtualInterfaceWithBgpPeers(vifs)
-		log.Println("Creating BGP peers")
+		log.Println("creating BGP peers")
 		for _, vif := range vifs {
 			a.logger.Info("virtual Interface:", vif.VirtualInterfaceID)
 			for _, bgpPeer := range vif.BGPPeers {
-				a.logger.Info("BGP Peer:", bgpPeer.BGPPeerID)
+				// Check if the BGP peer is active
+				if bgpPeer.BGPPeerState == "deleted" {
+					continue
+				}
+				a.logger.Info("BGP Peer:", bgpPeer.BGPPeerID, " on port TCP 179")
 				err = bgp.CreateBGPPeer(a.serverBgp, bgpPeer.ASN, net.ParseIP(bgpPeer.CustomerAddress))
 				if err != nil {
 					a.logger.Error("error in creating BGP peer", err)
