@@ -2,12 +2,10 @@ package main
 
 import (
 	"flag"
-	"log"
 	"net"
 	"os"
 	"sync"
 
-	"dx-mock/pkg/bgp"
 	d "dx-mock/pkg/dx"
 
 	"github.com/osrg/gobgp/v3/pkg/server"
@@ -72,42 +70,18 @@ func main() {
 		localBgpAsn: localBgpAsn,
 	}
 
-	a.logger.Info("the value of createBgpNeighbor is: ", createBgpNeighbor)
+	a.logger.Info("the value of createBgpNeighbor is ", createBgpNeighbor)
 	if a.createBGP {
-		a.logger.Info("creating BGP service")
-		a.primaryIP, err = bgp.GetPrimaryIP()
-		if err != nil {
-			a.logger.Error("error in getting primary IP address", err)
-			os.Exit(1)
-		}
-		a.logger.Info("primary IP address is", a.primaryIP)
-		a.serverBgp, err = bgp.CreateBgpServer(a.localBgpAsn, a.primaryIP)
-		if err != nil {
-			a.logger.Error("error in creating BGP server", err)
-			os.Exit(1)
-		}
 		vifs, err := GetActiveVirtualInterfaces()
 		if err != nil {
 			a.logger.Error("error in getting active Virtual Interfaces", err)
 			os.Exit(1)
 		}
 		vifs = GetVirtualInterfaceWithBgpPeers(vifs)
-		log.Println("creating BGP peers")
-		for _, vif := range vifs {
-			a.logger.Info("virtual Interface:", vif.VirtualInterfaceID)
-			for _, bgpPeer := range vif.BGPPeers {
-				// Check if the BGP peer is active
-				if bgpPeer.BGPPeerState == "deleted" {
-					continue
-				}
-				a.logger.Info("BGP Peer:", bgpPeer.BGPPeerID, " on port TCP 179")
-				err = bgp.CreateBGPPeer(a.serverBgp, bgpPeer.ASN, net.ParseIP(bgpPeer.CustomerAddress))
-				if err != nil {
-					a.logger.Error("error in creating BGP peer", err)
-					os.Exit(1)
-				}
-				a.bgpPeers = append(a.bgpPeers, bgpPeer)
-			}
+		err = a.initBgpConfig(vifs)
+		if err != nil {
+			a.logger.Error("error in initializing BGP configuration", err)
+			os.Exit(1)
 		}
 	}
 	//http.HandleFunc("/",a.handleRequest)
