@@ -47,7 +47,7 @@ func (a *application) serve() error {
 			for _, bgpPeer := range a.bgpPeers {
 				err = bgp.DeleteBGPPeer(a.serverBgp, bgpPeer.ASN, net.ParseIP(bgpPeer.CustomerAddress))
 				if err != nil {
-					a.logger.Info("error in deleting BGP peer", err)
+					a.logger.Info("error in deleting BGP peer ", err)
 				}
 			}
 			a.logger.Info("stopping the BGP service")
