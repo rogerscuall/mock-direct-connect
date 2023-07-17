@@ -2,9 +2,11 @@ package main
 
 import (
 	"dx-mock/adapters/db"
+	"dx-mock/pkg/bgp"
 	d "dx-mock/pkg/dx"
 	"encoding/json"
 	"log"
+	"net"
 	"net/http"
 )
 
@@ -47,6 +49,14 @@ func (a *application) CreateBGPPeer(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "BGP Peer already exists", http.StatusBadRequest)
 			return
 		}
+	}
+
+	// Create the BGP Peer
+	err = bgp.CreateBGPPeer(a.serverBgp, req.NewBGPPeer.Asn, net.ParseIP(req.NewBGPPeer.CustomerAddress))
+	if err != nil {
+		a.logger.Error("error in creating BGP peer", err)
+		http.Error(w, "Internal Error", http.StatusInternalServerError)
+		return
 	}
 
 	// Add the BGP Peer to the Virtual Interface
@@ -558,6 +568,14 @@ func (a *application) DeleteBGPPeer(w http.ResponseWriter, r *http.Request) {
 	// check if the BGP Peer already exists
 	for key, bgpPeer := range privateVIF.BGPPeers {
 		if bgpPeer.CustomerAddress == req.CustomerAddress {
+			// Delete the BGP Peer
+			a.logger.Info("deleting BGP peer", bgpPeer.BGPPeerID)
+			err = bgp.DeleteBGPPeer(a.serverBgp, bgpPeer.ASN, net.ParseIP(bgpPeer.CustomerAddress))
+			if err != nil {
+				a.logger.Error("error in deleting BGP peer", err)
+				http.Error(w, "Internal Error", http.StatusInternalServerError)
+				return
+			}
 			// Update the BGP Peer
 			privateVIF.BGPPeers[key].BGPPeerState = "deleted"
 			privateVIF.BGPPeers[key].BGPStatus = "down"
@@ -566,7 +584,7 @@ func (a *application) DeleteBGPPeer(w http.ResponseWriter, r *http.Request) {
 
 	err = vifDB.SetVal(req.VirtualInterfaceID, privateVIF)
 	if err != nil {
-		log.Println("Error in creating connection to database", err)
+		a.logger.Info("error in creating connection to database", err)
 		http.Error(w, "Database Connection failure", http.StatusInternalServerError)
 		return
 	}
