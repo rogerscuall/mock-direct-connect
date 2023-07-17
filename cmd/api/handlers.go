@@ -44,28 +44,7 @@ func (a *application) CreateBGPPeer(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Check the length of the BGP Peers
-
-
-	// Create a map of the BGP Peers to avoid duplicates
-	bgpMap := make(map[string]d.BGPConfig)
-	for _, bgpPeer := range privateVIF.BGPPeers {
-		bgpMap[bgpPeer.BGPPeerID] = bgpPeer
-	}
-
-	// Check if the BGP Peer already exists
-	if _, ok := bgpMap[req.NewBGPPeer.CustomerAddress]; !ok {
-		// Create the BGP Peer
-		err = bgp.CreateBGPPeer(a.serverBgp, req.NewBGPPeer.Asn, net.ParseIP(req.NewBGPPeer.CustomerAddress))
-		if err != nil {
-			log.Println("Error in creating BGP peer", err)
-			//http.Error(w, "Internal Error", http.StatusInternalServerError)
-			//return
-		}
-	}
-
-	// Update the BGP Peer in the database
-	bgpMap[req.NewBGPPeer.CustomerAddress] = d.BGPConfig{
+	bgpPeer := d.BGPConfig{
 		AddressFamily:      req.NewBGPPeer.AddressFamily,
 		AmazonAddress:      req.NewBGPPeer.AmazonAddress,
 		ASN:                req.NewBGPPeer.Asn,
@@ -78,13 +57,11 @@ func (a *application) CreateBGPPeer(w http.ResponseWriter, r *http.Request) {
 		CustomerAddress:    req.NewBGPPeer.CustomerAddress,
 	}
 
-	bgpPeers := []d.BGPConfig{}
-	// Add the BGP Peer to the Virtual Interface
-	for _, bgpPeer := range bgpMap {
-		bgpPeers = append(bgpPeers, bgpPeer)
+	err = bgp.CreateBGPPeer(a.serverBgp, req.NewBGPPeer.Asn, net.ParseIP(req.NewBGPPeer.CustomerAddress))
+	if err != nil {
+		a.logger.Error("error in creating BGP peer", err)
 	}
-
-	privateVIF.BGPPeers = bgpPeers
+	privateVIF.BGPPeers = []d.BGPConfig{bgpPeer}
 
 	// Update the Virtual Interface in the database
 	err = vifDB.SetVal(req.VirtualInterfaceID, privateVIF)
