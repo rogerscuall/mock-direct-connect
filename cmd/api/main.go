@@ -80,23 +80,27 @@ func main() {
 			a.logger.Error("error in getting primary IP address", err)
 			os.Exit(1)
 		}
+		a.logger.Info("primary IP address is", a.primaryIP)
 		a.serverBgp, err = bgp.CreateBgpServer(a.localBgpAsn, a.primaryIP)
 		if err != nil {
-			log.Panic("Error in creating BGP server", err)
+			a.logger.Error("error in creating BGP server", err)
+			os.Exit(1)
 		}
 		vifs, err := GetActiveVirtualInterfaces()
 		if err != nil {
-			log.Panic("Error in getting active Virtual Interfaces", err)
+			a.logger.Error("error in getting active Virtual Interfaces", err)
+			os.Exit(1)
 		}
 		vifs = GetVirtualInterfaceWithBgpPeers(vifs)
 		log.Println("Creating BGP peers")
 		for _, vif := range vifs {
-			log.Println("Virtual Interface:", vif.VirtualInterfaceID)
+			a.logger.Info("virtual Interface:", vif.VirtualInterfaceID)
 			for _, bgpPeer := range vif.BGPPeers {
-				log.Println("BGP Peer:", bgpPeer.BGPPeerID)
+				a.logger.Info("BGP Peer:", bgpPeer.BGPPeerID)
 				err = bgp.CreateBGPPeer(a.serverBgp, bgpPeer.ASN, net.ParseIP(bgpPeer.CustomerAddress))
 				if err != nil {
-					log.Println("Error in creating BGP peer", err)
+					a.logger.Error("Error in creating BGP peer", err)
+					os.Exit(1)
 				}
 				a.bgpPeers = append(a.bgpPeers, bgpPeer)
 			}
