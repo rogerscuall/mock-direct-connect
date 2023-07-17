@@ -550,7 +550,7 @@ func (a *application) DeleteBGPPeer(w http.ResponseWriter, r *http.Request) {
 
 	vifDB, err := db.NewAdapter(dbNameVIF)
 	if err != nil {
-		log.Println("Error in creating connection to database", err)
+		a.logger.Error("Error in creating connection to database", err)
 		http.Error(w, "Database Connection failure", http.StatusInternalServerError)
 		return
 	}
