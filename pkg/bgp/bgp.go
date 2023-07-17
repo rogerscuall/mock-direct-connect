@@ -84,7 +84,7 @@ func DeleteBGPPeer(s *server.BgpServer, asn int, ipAddress net.IP) error {
 }
 
 // AddPath adds a path to the BGP server
-func AddPath(s *server.BgpServer, path net.IPNet) error {
+func AddPath(s *server.BgpServer, path net.IPNet, nextHop net.IP) error {
 	prefixLengh, _ := path.Mask.Size()
 	nlri, _ := apb.New(&api.IPAddressPrefix{
 		Prefix:    path.IP.String(),
@@ -96,13 +96,13 @@ func AddPath(s *server.BgpServer, path net.IPNet) error {
 	})
 	//TODO: This is hardcoded fix.
 	a2, _ := apb.New(&api.NextHopAttribute{
-		NextHop: "10.0.0.1",
+		NextHop: nextHop.String(),
 	})
 	a3, _ := apb.New(&api.AsPathAttribute{
 		Segments: []*api.AsSegment{
 			{
 				Type:    2,
-				Numbers: []uint32{6762, 39919, 65000, 35753, 65000},
+				Numbers: []uint32{},
 			},
 		},
 	})
@@ -132,3 +132,5 @@ func GetPrimaryIP() (net.IP, error) {
 	localAddr := conn.LocalAddr().(*net.UDPAddr)
 	return localAddr.IP, err
 }
+
+
