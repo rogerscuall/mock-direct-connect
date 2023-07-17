@@ -99,7 +99,7 @@ func main() {
 				a.logger.Info("BGP Peer:", bgpPeer.BGPPeerID)
 				err = bgp.CreateBGPPeer(a.serverBgp, bgpPeer.ASN, net.ParseIP(bgpPeer.CustomerAddress))
 				if err != nil {
-					a.logger.Error("Error in creating BGP peer", err)
+					a.logger.Error("error in creating BGP peer", err)
 					os.Exit(1)
 				}
 				a.bgpPeers = append(a.bgpPeers, bgpPeer)
