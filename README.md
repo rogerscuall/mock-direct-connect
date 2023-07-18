@@ -1,7 +1,29 @@
 # Direct Connect Mock
 
-At the current moment is not possible to test features of Direct Connect without access to one. This is a mock of the Direct Connect API service. It is useful to test Terraform code that uses the Direct Connect API or any other code that uses the Direct Connect API.
-The following mock only include some of the API calls.
+At the current moment is not possible to test features of Direct Connect without access to one.
+This is a mock of the Direct Connect API service. It is useful to test API (or Boto3, Terraform or Ansible) that uses the Direct Connect API or any other code that uses the Direct Connect API.
+The following API calls are implemented:
+
+* CreateBGPPeer
+* CreateConnection
+* CreateDXGateway
+* CreateDirectConnectGatewayAssociation
+* CreatePrivateVirtualInterface
+* CreatePublicVirtualInterface
+* CreateTransitVirtualInterface
+* DeleteBGPPeer
+* DeleteConnections
+* DeleteDXGateway
+* DeleteDirectConnectGatewayAssociation
+* DeleteVirtualInterface
+* DescribeConnections
+* DescribeDXGateways
+* DescribeDirectConnectGatewayAssociations
+* DescribeVirtualInterfaces
+* DescribeTags
+* TagResource
+* UpdateConnection
+* UpdateDXGateway
 
 ## How to install
 
@@ -33,3 +55,10 @@ This like is very useful [AWS Direct API.](https://frichetten.com/blog/aws-api-p
 
 * The header `X-Amz-Target` is used to determine action to perform. The header has value like this: `OvertureService.CreateConnection` this correspond CreateConnection action. In other words this is a substitute the the Action in the query string.
 * The header `Content-Type` is used to determine the format of the request body. The header has value like this: `application/x-amz-json-1.1`.
+
+## Preview features
+
+### BGP Peer
+
+To use this feature create the ENVAR `export CREATE_BGP_NEIGHBOR=true` before running the mock.
+When `CREATE_BGP_NEIGHBOR==true` the localhost (host where the mock is running) will run BGP with ASN 65001, the IP address would be the primary IP address of the main interface, the mock will auto-discovery this IP. You should see the log similar to this: `2023/07/13 17:22:50 BGP Peer: 1.2.3.4`

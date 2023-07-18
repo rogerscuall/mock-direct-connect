@@ -57,7 +57,6 @@ func (da Adapter) SetVal(key string, s json.Marshaler) error {
 	return nil
 }
 
-
 func (da Adapter) Sync() {
 	err := da.db.Sync()
 	if err != nil {
@@ -65,4 +64,10 @@ func (da Adapter) Sync() {
 	}
 }
 
-
+func (da Adapter) GetKeys() ([][]byte, error) {
+	keys, err := da.db.Keys()
+	if err != nil {
+		return nil, err
+	}
+	return keys, nil
+}

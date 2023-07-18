@@ -2,13 +2,79 @@ package main
 
 import (
 	"dx-mock/adapters/db"
+	"dx-mock/pkg/bgp"
 	d "dx-mock/pkg/dx"
 	"encoding/json"
-	"log"
+	"net"
 	"net/http"
 )
 
-func CreateConnection(w http.ResponseWriter, r *http.Request) {
+// CreateBGPPeer creates a BGP Peer.
+// It checks if the Virtual Interface exists in the database and is available.
+// If it is it will add the BGP Peer to the Virtual Interface.
+// Virtual Interfaces can have only a single BGP Peer, that it is not enforced in the API.
+func (a *application) CreateBGPPeer(w http.ResponseWriter, r *http.Request) {
+	var req d.CreateBgpPeerRequest
+	err := d.RequestToJson(r, &req)
+	if err != nil {
+		http.Error(w, "Bad request", http.StatusBadRequest)
+		return
+	}
+
+	vifDB, err := db.NewAdapter(dbNameVIF)
+	if err != nil {
+		a.logger.Info("error in creating connection to database", err)
+		http.Error(w, "Database Connection failure", http.StatusInternalServerError)
+		return
+	}
+	defer vifDB.CloseDbConnection()
+
+	var privateVIF d.PrivateVirtualInterface
+
+	err = vifDB.GetVal(req.VirtualInterfaceID, &privateVIF)
+	if err != nil {
+		a.logger.Info("error in getting virtual interface ID from database", err)
+		http.Error(w, "Internal Error", http.StatusInternalServerError)
+		return
+	}
+	// Check if the Virtual Interface is available
+	if privateVIF.VirtualInterfaceState != "available" {
+		http.Error(w, "Virtual Interface is not available", http.StatusBadRequest)
+		return
+	}
+
+	bgpPeer := d.BGPConfig{
+		AddressFamily:      req.NewBGPPeer.AddressFamily,
+		AmazonAddress:      req.NewBGPPeer.AmazonAddress,
+		ASN:                req.NewBGPPeer.Asn,
+		AuthKey:            req.NewBGPPeer.AuthKey,
+		AwsDeviceV2:        "virtual",
+		AwsLogicalDeviceID: "virtual",
+		BGPPeerID:          req.NewBGPPeer.CustomerAddress,
+		BGPPeerState:       "available",
+		BGPStatus:          "up",
+		CustomerAddress:    req.NewBGPPeer.CustomerAddress,
+	}
+
+	err = bgp.CreateBGPPeer(a.serverBgp, req.NewBGPPeer.Asn, net.ParseIP(req.NewBGPPeer.CustomerAddress))
+	if err != nil {
+		a.logger.Error("error in creating BGP peer", err)
+	}
+	privateVIF.BGPPeers = []d.BGPConfig{bgpPeer}
+
+	// Update the Virtual Interface in the database
+	err = vifDB.SetVal(req.VirtualInterfaceID, privateVIF)
+	if err != nil {
+		a.logger.Info("error in creating connection to database", err)
+		http.Error(w, "Database Connection failure", http.StatusInternalServerError)
+		return
+	}
+
+	returnOk(w, privateVIF)
+
+}
+
+func (a *application) CreateConnection(w http.ResponseWriter, r *http.Request) {
 	dx, err := d.CreateConnection(r)
 	if err != nil {
 		http.Error(w, "Bad request", http.StatusBadRequest)
@@ -16,7 +82,7 @@ func CreateConnection(w http.ResponseWriter, r *http.Request) {
 	}
 	connectionDB, err := db.NewAdapter(dbNameConnection)
 	if err != nil {
-		log.Println("Error in creating connection to database", err)
+		a.logger.Info("error in creating connection to database", err)
 		http.Error(w, "Database Connection failure", http.StatusInternalServerError)
 		return
 	}
@@ -25,7 +91,7 @@ func CreateConnection(w http.ResponseWriter, r *http.Request) {
 
 	err = connectionDB.SetVal(dx.ConnectionId, &dx)
 	if err != nil {
-		log.Println("Error in creating connection to database", err)
+		a.logger.Info("error in creating connection to database", err)
 		http.Error(w, "Database Connection failure", http.StatusInternalServerError)
 		return
 	}
@@ -38,7 +104,7 @@ func CreateConnection(w http.ResponseWriter, r *http.Request) {
 
 	tagDB, err := db.NewAdapter(dbNameTags)
 	if err != nil {
-		log.Println("Error in creating connection to database", err)
+		a.logger.Info("error in creating connection to database", err)
 		http.Error(w, "Database Connection failure", http.StatusInternalServerError)
 		return
 	}
@@ -46,7 +112,7 @@ func CreateConnection(w http.ResponseWriter, r *http.Request) {
 
 	err = tagDB.SetVal(dx.ConnectionId, resourceTag)
 	if err != nil {
-		log.Println("Error in creating connection to database", err)
+		a.logger.Info("error in creating connection to database", err)
 		http.Error(w, "Database Connection failure", http.StatusInternalServerError)
 		return
 	}
@@ -57,7 +123,7 @@ func CreateConnection(w http.ResponseWriter, r *http.Request) {
 
 // CreateDXGateway creates a Direct Connect Gateway.
 // Updates the DB.
-func CreateDXGateway(w http.ResponseWriter, r *http.Request) {
+func (a *application) CreateDXGateway(w http.ResponseWriter, r *http.Request) {
 	g, err := d.CreateDXGateway(r)
 	if err != nil {
 		http.Error(w, "Bad request", http.StatusBadRequest)
@@ -66,7 +132,7 @@ func CreateDXGateway(w http.ResponseWriter, r *http.Request) {
 
 	dxgwDB, err := db.NewAdapter(dbNameDXGwy)
 	if err != nil {
-		log.Println("Error in creating connection to database", err)
+		a.logger.Info("error in creating connection to database", err)
 		http.Error(w, "Database Connection failure", http.StatusInternalServerError)
 		return
 	}
@@ -74,7 +140,7 @@ func CreateDXGateway(w http.ResponseWriter, r *http.Request) {
 
 	err = dxgwDB.SetVal(g.DirectConnectGatewayId, g)
 	if err != nil {
-		log.Println("Error in creating connection to database", err)
+		a.logger.Info("error in creating connection to database", err)
 		http.Error(w, "Database Connection failure", http.StatusInternalServerError)
 		return
 	}
@@ -88,8 +154,46 @@ func CreateDXGateway(w http.ResponseWriter, r *http.Request) {
 	returnOk(w, response)
 }
 
+// CreateDirectConnectGatewayAssociation creates a Direct Connect Gateway Association.
+func (a *application) CreateDirectConnectGatewayAssociation(w http.ResponseWriter, r *http.Request) {
+	dxGwAsso, err := d.CreateDirectConnectGatewayAssociation(r)
+	if err != nil {
+		http.Error(w, "Bad request", http.StatusBadRequest)
+		return
+	}
+	dxGwDBAssociation, err := db.NewAdapter(dbNameDXGWyAssociation)
+	if err != nil {
+		a.logger.Info("error in creating connection to database", err)
+		http.Error(w, "Database Connection failure", http.StatusInternalServerError)
+		return
+	}
+
+	defer dxGwDBAssociation.CloseDbConnection()
+
+	// Add the prefixes to BGP
+	for _, prefix := range dxGwAsso.DirectConnectGatewayAssociation.AllowedPrefixesToDirectConnectGateway {
+		_, path, err := net.ParseCIDR(prefix.Cidr)
+		if err != nil {
+			a.logger.Error("error in parsing CIDR", err)
+		}
+		err = bgp.AddPath(a.serverBgp, *path, a.primaryIP)
+		if err != nil {
+			a.logger.Error("error in adding prefix to BGP", err)
+			continue
+		}
+		a.logger.Info("added prefix to BGP: ", prefix.Cidr)
+	}
+
+	err = dxGwDBAssociation.SetVal(dxGwAsso.DirectConnectGatewayAssociation.AssociationId, dxGwAsso)
+	if err != nil {
+		a.logger.Info("error in creating connection to database", err)
+		http.Error(w, "Database Connection failure", http.StatusInternalServerError)
+	}
+	returnOk(w, dxGwAsso)
+}
+
 // CreatePrivateVirtualInterface
-func CreatePrivateVirtualInterface(w http.ResponseWriter, r *http.Request) {
+func (a *application) CreatePrivateVirtualInterface(w http.ResponseWriter, r *http.Request) {
 	vif, err := d.CreatePrivateVirtualInterface(r)
 	if err != nil {
 		http.Error(w, "Bad request", http.StatusBadRequest)
@@ -98,7 +202,7 @@ func CreatePrivateVirtualInterface(w http.ResponseWriter, r *http.Request) {
 
 	vifDB, err := db.NewAdapter(dbNameVIF)
 	if err != nil {
-		log.Println("Error in creating connection to database", err)
+		a.logger.Info("error in creating connection to database", err)
 		http.Error(w, "Database Connection failure", http.StatusInternalServerError)
 		return
 	}
@@ -106,7 +210,7 @@ func CreatePrivateVirtualInterface(w http.ResponseWriter, r *http.Request) {
 
 	err = vifDB.SetVal(vif.VirtualInterfaceID, vif)
 	if err != nil {
-		log.Println("Error in creating connection to database", err)
+		a.logger.Info("error in creating connection to database", err)
 		http.Error(w, "Database Connection failure", http.StatusInternalServerError)
 		return
 	}
@@ -119,7 +223,7 @@ func CreatePrivateVirtualInterface(w http.ResponseWriter, r *http.Request) {
 
 	tagDB, err := db.NewAdapter(dbNameTags)
 	if err != nil {
-		log.Println("Error in creating connection to database", err)
+		a.logger.Info("error in creating connection to database", err)
 		http.Error(w, "Database Connection failure", http.StatusInternalServerError)
 		return
 	}
@@ -127,7 +231,7 @@ func CreatePrivateVirtualInterface(w http.ResponseWriter, r *http.Request) {
 
 	err = tagDB.SetVal(vif.VirtualInterfaceID, resourceTag)
 	if err != nil {
-		log.Println("Error in creating connection to database", err)
+		a.logger.Info("error in creating connection to database", err)
 		http.Error(w, "Database Connection failure", http.StatusInternalServerError)
 		return
 	}
@@ -136,7 +240,7 @@ func CreatePrivateVirtualInterface(w http.ResponseWriter, r *http.Request) {
 }
 
 // CreatePublicVirtualInterface
-func CreatePublicVirtualInterface(w http.ResponseWriter, r *http.Request) {
+func (a *application) CreatePublicVirtualInterface(w http.ResponseWriter, r *http.Request) {
 	vif, err := d.CreatePublicVirtualInterface(r)
 	if err != nil {
 		http.Error(w, "Bad request", http.StatusBadRequest)
@@ -145,7 +249,7 @@ func CreatePublicVirtualInterface(w http.ResponseWriter, r *http.Request) {
 
 	vifDB, err := db.NewAdapter(dbNameVIF)
 	if err != nil {
-		log.Println("Error in creating connection to database", err)
+		a.logger.Info("error in creating connection to database", err)
 		http.Error(w, "Database Connection failure", http.StatusInternalServerError)
 		return
 	}
@@ -153,7 +257,7 @@ func CreatePublicVirtualInterface(w http.ResponseWriter, r *http.Request) {
 
 	err = vifDB.SetVal(vif.VirtualInterfaceID, vif)
 	if err != nil {
-		log.Println("Error in creating connection to database", err)
+		a.logger.Info("error in creating connection to database", err)
 		http.Error(w, "Database Connection failure", http.StatusInternalServerError)
 		return
 	}
@@ -166,7 +270,7 @@ func CreatePublicVirtualInterface(w http.ResponseWriter, r *http.Request) {
 
 	tagDB, err := db.NewAdapter(dbNameTags)
 	if err != nil {
-		log.Println("Error in creating connection to database", err)
+		a.logger.Info("error in creating connection to database", err)
 		http.Error(w, "Database Connection failure", http.StatusInternalServerError)
 		return
 	}
@@ -174,7 +278,7 @@ func CreatePublicVirtualInterface(w http.ResponseWriter, r *http.Request) {
 
 	err = tagDB.SetVal(vif.VirtualInterfaceID, resourceTag)
 	if err != nil {
-		log.Println("Error in creating connection to database", err)
+		a.logger.Info("error in creating connection to database", err)
 		http.Error(w, "Database Connection failure", http.StatusInternalServerError)
 		return
 	}
@@ -182,8 +286,56 @@ func CreatePublicVirtualInterface(w http.ResponseWriter, r *http.Request) {
 	returnOk(w, vif)
 }
 
+func (a *application) CreateTransitVirtualInterface(w http.ResponseWriter, r *http.Request) {
+	vif, err := d.CreateTransitVirtualInterface(r)
+	if err != nil {
+		http.Error(w, "Bad request", http.StatusBadRequest)
+		return
+	}
+
+	vifDB, err := db.NewAdapter(dbNameVIF)
+	if err != nil {
+		a.logger.Info("error in creating connection to database", err)
+		http.Error(w, "Database Connection failure", http.StatusInternalServerError)
+		return
+	}
+	defer vifDB.CloseDbConnection()
+
+	err = vifDB.SetVal(vif.VirtualInterfaceID, vif)
+	if err != nil {
+		a.logger.Info("error in creating connection to database", err)
+		http.Error(w, "Database Connection failure", http.StatusInternalServerError)
+		return
+	}
+
+	// Update the tag database
+	resourceTag := d.ResourceTag{
+		ResourceArn: d.CreateARN("us-east-1", vif.VirtualInterfaceID),
+		Tags:        vif.Tags,
+	}
+
+	tagDB, err := db.NewAdapter(dbNameTags)
+	if err != nil {
+		a.logger.Info("error in creating connection to database", err)
+		http.Error(w, "Database Connection failure", http.StatusInternalServerError)
+		return
+	}
+	defer tagDB.CloseDbConnection()
+
+	err = tagDB.SetVal(vif.VirtualInterfaceID, resourceTag)
+	if err != nil {
+		a.logger.Info("error in creating connection to database", err)
+		http.Error(w, "Database Connection failure", http.StatusInternalServerError)
+		return
+	}
+	response := struct {
+		VirtualInterface d.TransitVirtualInterface `json:"virtualInterface"`
+	}{vif}
+	returnOk(w, response)
+}
+
 // A private virtual interface can be connected to either a Direct Connect gateway or a Virtual Private Gateway (VGW).
-func DescribeConnections(w http.ResponseWriter, r *http.Request) {
+func (a *application) DescribeConnections(w http.ResponseWriter, r *http.Request) {
 	request, err := d.DescribeConnections(r)
 	if err != nil {
 		http.Error(w, "Bad request", http.StatusBadRequest)
@@ -191,7 +343,7 @@ func DescribeConnections(w http.ResponseWriter, r *http.Request) {
 	}
 	connectionDB, err := db.NewAdapter(dbNameConnection)
 	if err != nil {
-		log.Println("Error in creating connection to database", err)
+		a.logger.Info("error in creating connection to database", err)
 		http.Error(w, "Database Connection failure", http.StatusInternalServerError)
 		return
 	}
@@ -205,7 +357,7 @@ func DescribeConnections(w http.ResponseWriter, r *http.Request) {
 	var dx d.Connection
 	err = connectionDB.GetVal(request.ConnectionId, &dx)
 	if err != nil {
-		log.Println("Error in getting connection ID from database", err)
+		a.logger.Info("error in getting connection ID from database", err)
 		json.NewEncoder(w).Encode(response)
 	}
 
@@ -213,8 +365,69 @@ func DescribeConnections(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(response)
 }
 
+// DescribeDirectConnectGatewayAssociations is the handler for the "DescribeDirectConnectGatewayAssociations" API
+func (a *application) DescribeDirectConnectGatewayAssociations(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		AssociatedGateway      string `json:"associatedGateway"`
+		AssociationId          string `json:"associationId"`
+		DirectConnectGatewayId string `json:"directConnectGatewayId"`
+		MaxResults             int    `json:"maxResults"`
+		NextToken              string `json:"nextToken"`
+		VirtualGatewayId       string `json:"virtualGatewayId"`
+	}
+	err := d.RequestToJson(r, &req)
+	if err != nil {
+		http.Error(w, "Bad request", http.StatusBadRequest)
+		return
+	}
+
+	dxgwDB, err := db.NewAdapter(dbNameDXGWyAssociation)
+	if err != nil {
+		a.logger.Info("error in creating connection to database", err)
+		http.Error(w, "Database Connection failure", http.StatusInternalServerError)
+		return
+	}
+
+	defer dxgwDB.CloseDbConnection()
+
+	// Get all the keys from the database
+	keys, err := dxgwDB.GetKeys()
+	if err != nil {
+		a.logger.Info("error in getting keys from database", err)
+		http.Error(w, "Database Connection failure", http.StatusInternalServerError)
+		return
+	}
+
+	associations := []d.DirectConnectGatewayAssociationResponse{}
+	// Iterate over the keys and get the values
+	for _, key := range keys {
+		var dxGwAsso d.DirectConnectGatewayAssociationResponse
+		err = dxgwDB.GetVal(string(key), &dxGwAsso)
+		if err != nil {
+			a.logger.Info("error in getting values from database", err)
+			http.Error(w, "Database Connection failure", http.StatusInternalServerError)
+			return
+		}
+		associations = append(associations, dxGwAsso)
+	}
+
+	type response struct {
+		DirectConnectGatewayAssociations []d.DirectConnectGatewayAssociation `json:"directConnectGatewayAssociations"`
+		NextToken                        string                              `json:"nextToken"`
+	}
+
+	var resp response
+	resp.DirectConnectGatewayAssociations = []d.DirectConnectGatewayAssociation{}
+	for _, association := range associations {
+		if association.DirectConnectGatewayAssociation.AssociationId == req.AssociationId {
+			resp.DirectConnectGatewayAssociations = append(resp.DirectConnectGatewayAssociations, association.DirectConnectGatewayAssociation)
+		}
+	}
+	returnOk(w, resp)
+}
+
 // DescribeVirtualInterfaces
-func DescribeVirtualInterfaces(w http.ResponseWriter, r *http.Request) {
+func (a *application) DescribeVirtualInterfaces(w http.ResponseWriter, r *http.Request) {
 	var req struct {
 		VirtualInterfaceID string `json:"virtualInterfaceId"`
 		ConnectionID       string `json:"connectionId"`
@@ -227,7 +440,7 @@ func DescribeVirtualInterfaces(w http.ResponseWriter, r *http.Request) {
 
 	vifDB, err := db.NewAdapter(dbNameVIF)
 	if err != nil {
-		log.Println("Error in creating connection to database", err)
+		a.logger.Info("error in creating connection to database", err)
 		http.Error(w, "Database Connection failure", http.StatusInternalServerError)
 		return
 	}
@@ -237,7 +450,7 @@ func DescribeVirtualInterfaces(w http.ResponseWriter, r *http.Request) {
 
 	err = vifDB.GetVal(req.VirtualInterfaceID, &privateVIF)
 	if err != nil {
-		log.Println("Error in getting virtual interface ID from database", err)
+		a.logger.Info("error in getting virtual interface ID from database", err)
 		http.Error(w, "Internal Error", http.StatusInternalServerError)
 		return
 	}
@@ -250,7 +463,7 @@ func DescribeVirtualInterfaces(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(response)
 }
 
-func DescribeTags(w http.ResponseWriter, r *http.Request) {
+func (a *application) DescribeTags(w http.ResponseWriter, r *http.Request) {
 	request, err := d.DescribeTags(r)
 	if err != nil {
 		http.Error(w, "Bad request", http.StatusBadRequest)
@@ -259,7 +472,7 @@ func DescribeTags(w http.ResponseWriter, r *http.Request) {
 
 	connectionDB, err := db.NewAdapter(dbNameTags)
 	if err != nil {
-		log.Println("Error in creating connection to database", err)
+		a.logger.Info("error in creating connection to database", err)
 		http.Error(w, "Database Connection failure", http.StatusInternalServerError)
 		return
 	}
@@ -270,14 +483,14 @@ func DescribeTags(w http.ResponseWriter, r *http.Request) {
 	for _, resourceARN := range request.ResourceArns {
 		key, err := d.GetIDFromARN(resourceARN)
 		if err != nil {
-			log.Println("Error in getting key from ARN", err)
+			a.logger.Info("error in getting key from ARN", err)
 			http.Error(w, "Internal Error", http.StatusInternalServerError)
 			return
 		}
 		resourceTag := d.ResourceTag{}
 		err = connectionDB.GetVal(key, &resourceTag)
 		if err != nil {
-			log.Println("Value not found in database", err)
+			a.logger.Info("Value not found in database", err)
 			continue
 		}
 
@@ -289,7 +502,7 @@ func DescribeTags(w http.ResponseWriter, r *http.Request) {
 
 // DescribeDXGateways returns a list of Direct Connect Gateways.
 // DXGWYs in deleted state are not returned.
-func DescribeDXGateways(w http.ResponseWriter, r *http.Request) {
+func (a *application) DescribeDXGateways(w http.ResponseWriter, r *http.Request) {
 	request, err := d.DescribeDXGateways(r)
 	if err != nil {
 		http.Error(w, "Bad request", http.StatusBadRequest)
@@ -298,7 +511,7 @@ func DescribeDXGateways(w http.ResponseWriter, r *http.Request) {
 
 	dxgwDB, err := db.NewAdapter(dbNameDXGwy)
 	if err != nil {
-		log.Println("Error in creating connection to database", err)
+		a.logger.Info("error in creating connection to database", err)
 		http.Error(w, "Database Connection failure", http.StatusInternalServerError)
 		return
 	}
@@ -311,7 +524,7 @@ func DescribeDXGateways(w http.ResponseWriter, r *http.Request) {
 	var g d.DXGateway
 	err = dxgwDB.GetVal(request.DirectConnectGatewayId, &g)
 	if err != nil {
-		log.Println("Error in getting connection ID from database", err)
+		a.logger.Info("error in getting connection ID from database", err)
 	}
 	if g.DirectConnectGatewayState != "deleted" {
 		response.DirectConnectGateways = append(response.DirectConnectGateways, g)
@@ -320,8 +533,66 @@ func DescribeDXGateways(w http.ResponseWriter, r *http.Request) {
 	returnOk(w, response)
 }
 
+// DeleteBGPPeer deletes a BGP Peer.
+// Check if the Virtual Interface exists in the database.
+// Check if the BGP Peer exists in the Virtual Interface.
+// Change the state of the BGP Peer to deleted and the status to down.
+func (a *application) DeleteBGPPeer(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		ASN                int    `json:"asn"`
+		BGPPeerID          string `json:"bgpPeerId"`
+		CustomerAddress    string `json:"customerAddress"`
+		VirtualInterfaceID string `json:"virtualInterfaceId"`
+	}
+	err := d.RequestToJson(r, &req)
+	if err != nil {
+		http.Error(w, "Bad request", http.StatusBadRequest)
+		return
+	}
+
+	vifDB, err := db.NewAdapter(dbNameVIF)
+	if err != nil {
+		a.logger.Error("error in creating connection to database", err)
+		http.Error(w, "Database Connection failure", http.StatusInternalServerError)
+		return
+	}
+	defer vifDB.CloseDbConnection()
+
+	var privateVIF d.PrivateVirtualInterface
+
+	err = vifDB.GetVal(req.VirtualInterfaceID, &privateVIF)
+	if err != nil {
+		a.logger.Info("error in getting virtual interface ID from database", err)
+		http.Error(w, "Internal Error", http.StatusInternalServerError)
+		return
+	}
+
+	// check if the BGP Peer already exists
+	for key, bgpPeer := range privateVIF.BGPPeers {
+		if bgpPeer.CustomerAddress == req.CustomerAddress {
+			// Delete the BGP Peer
+			a.logger.Info("deleting BGP peer ", bgpPeer.BGPPeerID)
+			err = bgp.DeleteBGPPeer(a.serverBgp, bgpPeer.ASN, net.ParseIP(bgpPeer.CustomerAddress))
+			if err != nil {
+				a.logger.Error("error in deleting BGP peer ", err)
+			}
+			// Update the BGP Peer
+			privateVIF.BGPPeers[key].BGPPeerState = "deleted"
+			privateVIF.BGPPeers[key].BGPStatus = "down"
+		}
+	}
+
+	err = vifDB.SetVal(req.VirtualInterfaceID, privateVIF)
+	if err != nil {
+		a.logger.Info("error in creating connection to database", err)
+		http.Error(w, "Database Connection failure", http.StatusInternalServerError)
+		return
+	}
+	returnOk(w, privateVIF)
+}
+
 // DeleteConnections deletes a connection.
-func DeleteConnections(w http.ResponseWriter, r *http.Request) {
+func (a *application) DeleteConnections(w http.ResponseWriter, r *http.Request) {
 	var req struct {
 		ConnectionID string `json:"connectionId"`
 	}
@@ -333,7 +604,7 @@ func DeleteConnections(w http.ResponseWriter, r *http.Request) {
 
 	connectionDB, err := db.NewAdapter(dbNameConnection)
 	if err != nil {
-		log.Println("Error in creating connection to database", err)
+		a.logger.Info("error in creating connection to database", err)
 		http.Error(w, "Database Connection failure", http.StatusInternalServerError)
 		return
 	}
@@ -342,7 +613,7 @@ func DeleteConnections(w http.ResponseWriter, r *http.Request) {
 	var dx d.Connection
 	err = connectionDB.GetVal(req.ConnectionID, &dx)
 	if err != nil {
-		log.Println("Error in getting connection ID from database", err)
+		a.logger.Info("error in getting connection ID from database", err)
 		http.Error(w, "Internal Error", http.StatusInternalServerError)
 		return
 	}
@@ -352,7 +623,7 @@ func DeleteConnections(w http.ResponseWriter, r *http.Request) {
 	// Delete the connection from the database
 	err = connectionDB.SetVal(req.ConnectionID, dx)
 	if err != nil {
-		log.Println("Error in deleting connection ID from database", err)
+		a.logger.Info("error in deleting connection ID from database", err)
 		http.Error(w, "Internal Error", http.StatusInternalServerError)
 		return
 	}
@@ -361,7 +632,7 @@ func DeleteConnections(w http.ResponseWriter, r *http.Request) {
 }
 
 // DeleteDXGateway deletes a Direct Connect Gateway.
-func DeleteDXGateway(w http.ResponseWriter, r *http.Request) {
+func (a *application) DeleteDXGateway(w http.ResponseWriter, r *http.Request) {
 	request, err := d.DeleteDXGateway(r)
 	if err != nil {
 		http.Error(w, "Bad request", http.StatusBadRequest)
@@ -370,7 +641,7 @@ func DeleteDXGateway(w http.ResponseWriter, r *http.Request) {
 
 	dxgwDB, err := db.NewAdapter(dbNameDXGwy)
 	if err != nil {
-		log.Println("Error in creating connection to database", err)
+		a.logger.Info("error in creating connection to database", err)
 		http.Error(w, "Database Connection failure", http.StatusInternalServerError)
 		return
 	}
@@ -379,7 +650,7 @@ func DeleteDXGateway(w http.ResponseWriter, r *http.Request) {
 	var g d.DXGateway
 	err = dxgwDB.GetVal(request.DirectConnectGatewayId, &g)
 	if err != nil {
-		log.Println("Error in getting connection ID from database", err)
+		a.logger.Info("error in getting connection ID from database", err)
 		http.Error(w, "Internal Error", http.StatusInternalServerError)
 		return
 	}
@@ -388,7 +659,7 @@ func DeleteDXGateway(w http.ResponseWriter, r *http.Request) {
 
 	err = dxgwDB.SetVal(request.DirectConnectGatewayId, g)
 	if err != nil {
-		log.Println("Error in creating connection to database", err)
+		a.logger.Info("error in creating connection to database", err)
 		http.Error(w, "Database Connection failure", http.StatusInternalServerError)
 		return
 	}
@@ -396,8 +667,45 @@ func DeleteDXGateway(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
+// DeleteDirectConnectGatewayAssociation deletes a Direct Connect Gateway Association.
+func (a *application) DeleteDirectConnectGatewayAssociation(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		AssociationID          string `json:"associationId"`
+		DirectConnectGatewayId string `json:"directConnectGatewayId"`
+		VirtualGatewayId       string `json:"virtualGatewayId"`
+	}
+	err := d.RequestToJson(r, &req)
+	if err != nil {
+		http.Error(w, "Bad request", http.StatusBadRequest)
+		return
+	}
+	dxgwDB, err := db.NewAdapter(dbNameDXGWyAssociation)
+	if err != nil {
+		a.logger.Info("error in creating connection to database", err)
+		http.Error(w, "Database Connection failure", http.StatusInternalServerError)
+		return
+	}
+
+	defer dxgwDB.CloseDbConnection()
+
+	var dxGwAsso d.DirectConnectGatewayAssociationResponse
+	err = dxgwDB.GetVal(req.AssociationID, &dxGwAsso)
+	if err != nil {
+		a.logger.Info("error in getting connection ID from database", err)
+		http.Error(w, "Internal Error", http.StatusInternalServerError)
+		return
+	}
+	dxGwAsso.DirectConnectGatewayAssociation.AssociationState = "disassociated"
+	err = dxgwDB.SetVal(req.AssociationID, dxGwAsso)
+	if err != nil {
+		a.logger.Info("error in creating connection to database", err)
+		http.Error(w, "Database Connection failure", http.StatusInternalServerError)
+	}
+	returnOk(w, dxGwAsso)
+}
+
 // DeleteVirtualInterface deletes a virtual interface.
-func DeleteVirtualInterface(w http.ResponseWriter, r *http.Request) {
+func (a *application) DeleteVirtualInterface(w http.ResponseWriter, r *http.Request) {
 	var req struct {
 		VirtualInterfaceID string `json:"virtualInterfaceId"`
 	}
@@ -409,7 +717,7 @@ func DeleteVirtualInterface(w http.ResponseWriter, r *http.Request) {
 
 	vifDB, err := db.NewAdapter(dbNameVIF)
 	if err != nil {
-		log.Println("Error in creating connection to database", err)
+		a.logger.Info("error in creating connection to database", err)
 		http.Error(w, "Database Connection failure", http.StatusInternalServerError)
 		return
 	}
@@ -418,7 +726,7 @@ func DeleteVirtualInterface(w http.ResponseWriter, r *http.Request) {
 	var privateVIF d.PrivateVirtualInterface
 	err = vifDB.GetVal(req.VirtualInterfaceID, &privateVIF)
 	if err != nil {
-		log.Println("Error in getting virtual interface ID from database", err)
+		a.logger.Info("error in getting virtual interface ID from database", err)
 		http.Error(w, "Internal Error", http.StatusInternalServerError)
 		return
 	}
@@ -427,7 +735,7 @@ func DeleteVirtualInterface(w http.ResponseWriter, r *http.Request) {
 
 	err = vifDB.SetVal(req.VirtualInterfaceID, privateVIF)
 	if err != nil {
-		log.Println("Error in creating connection to database", err)
+		a.logger.Info("error in creating connection to database", err)
 		http.Error(w, "Database Connection failure", http.StatusInternalServerError)
 		return
 	}
@@ -436,7 +744,7 @@ func DeleteVirtualInterface(w http.ResponseWriter, r *http.Request) {
 }
 
 // TagResource tags a resource
-func TagResource(w http.ResponseWriter, r *http.Request) {
+func (a *application) TagResource(w http.ResponseWriter, r *http.Request) {
 	resourceTag, err := d.TagResource(r)
 	if err != nil {
 		http.Error(w, "Bad request", http.StatusBadRequest)
@@ -445,7 +753,7 @@ func TagResource(w http.ResponseWriter, r *http.Request) {
 
 	connectionDB, err := db.NewAdapter(dbNameTags)
 	if err != nil {
-		log.Println("Error in creating connection to database", err)
+		a.logger.Info("error in creating connection to database", err)
 		http.Error(w, "Database Connection failure", http.StatusInternalServerError)
 		return
 	}
@@ -453,14 +761,14 @@ func TagResource(w http.ResponseWriter, r *http.Request) {
 
 	key, err := d.GetIDFromARN(resourceTag.ResourceArn)
 	if err != nil {
-		log.Println("Error in getting key from ARN", err)
+		a.logger.Info("error in getting key from ARN", err)
 		http.Error(w, "Internal Error", http.StatusInternalServerError)
 		return
 	}
 
 	err = connectionDB.SetVal(key, resourceTag)
 	if err != nil {
-		log.Println("Error in creating connection to database", err)
+		a.logger.Info("error in creating connection to database", err)
 		http.Error(w, "Database Connection failure", http.StatusInternalServerError)
 		return
 	}
@@ -470,7 +778,7 @@ func TagResource(w http.ResponseWriter, r *http.Request) {
 
 // UpdateDXGateway updates a Direct Connect Gateway.
 // Updates the DB.
-func UpdateDXGateway(w http.ResponseWriter, r *http.Request) {
+func (a *application) UpdateDXGateway(w http.ResponseWriter, r *http.Request) {
 	request, err := d.UpdateDXGateway(r)
 	if err != nil {
 		http.Error(w, "Bad request", http.StatusBadRequest)
@@ -479,7 +787,7 @@ func UpdateDXGateway(w http.ResponseWriter, r *http.Request) {
 
 	dxgwDB, err := db.NewAdapter(dbNameDXGwy)
 	if err != nil {
-		log.Println("Error in creating connection to database", err)
+		a.logger.Info("error in creating connection to database", err)
 		http.Error(w, "Database Connection failure", http.StatusInternalServerError)
 		return
 	}
@@ -488,7 +796,7 @@ func UpdateDXGateway(w http.ResponseWriter, r *http.Request) {
 	var g d.DXGateway
 	err = dxgwDB.GetVal(request.DirectConnectGatewayId, &g)
 	if err != nil {
-		log.Println("Error in getting connection ID from database", err)
+		a.logger.Info("error in getting connection ID from database", err)
 		http.Error(w, "Internal Error", http.StatusInternalServerError)
 		return
 	}
@@ -497,7 +805,7 @@ func UpdateDXGateway(w http.ResponseWriter, r *http.Request) {
 
 	err = dxgwDB.SetVal(request.DirectConnectGatewayId, g)
 	if err != nil {
-		log.Println("Error in creating connection to database", err)
+		a.logger.Info("error in creating connection to database", err)
 		http.Error(w, "Database Connection failure", http.StatusInternalServerError)
 		return
 	}
