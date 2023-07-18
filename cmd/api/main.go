@@ -55,11 +55,11 @@ func main() {
 	var cfg config
 
 	flag.IntVar(&cfg.port, "port", 8080, "Port to listen on")
-	flag.StringVar(&logMinLevel, "log", "INFO", "LOG LEVEL (DEBUG|INFO|WARNING|ERROR)")
+	flag.BoolVar(&createBgpNeighbor, "enable-bgp", true, "Create BGP Neighbor")
 	flag.IntVar(&localBgpAsn, "asn", 65001, "Local BGP ASN")
-
-	// Load createBgpNeighbor from the environment variable CREATE_BGP_NEIGHBOR
-	createBgpNeighbor = os.Getenv("CREATE_BGP_NEIGHBOR") == "true"
+	flag.StringVar(&logMinLevel, "log", "INFO", "LOG LEVEL (DEBUG|INFO|WARNING|ERROR)")
+	
+	flag.Parse()
 
 	logLevel := NewCustomLogger(logMinLevel)
 
