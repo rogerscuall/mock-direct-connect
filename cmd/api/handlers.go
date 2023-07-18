@@ -56,9 +56,11 @@ func (a *application) CreateBGPPeer(w http.ResponseWriter, r *http.Request) {
 		CustomerAddress:    req.NewBGPPeer.CustomerAddress,
 	}
 
-	err = bgp.CreateBGPPeer(a.serverBgp, req.NewBGPPeer.Asn, net.ParseIP(req.NewBGPPeer.CustomerAddress))
-	if err != nil {
-		a.logger.Error("error in creating BGP peer", err)
+	if a.createBGP {
+		err = bgp.CreateBGPPeer(a.serverBgp, req.NewBGPPeer.Asn, net.ParseIP(req.NewBGPPeer.CustomerAddress))
+		if err != nil {
+			a.logger.Error("error in creating BGP peer", err)
+		}
 	}
 	privateVIF.BGPPeers = []d.BGPConfig{bgpPeer}
 
@@ -176,11 +178,14 @@ func (a *application) CreateDirectConnectGatewayAssociation(w http.ResponseWrite
 		if err != nil {
 			a.logger.Error("error in parsing CIDR", err)
 		}
-		err = bgp.AddPath(a.serverBgp, *path, a.primaryIP)
-		if err != nil {
-			a.logger.Error("error in adding prefix to BGP", err)
-			continue
+		if a.createBGP {
+			err = bgp.AddPath(a.serverBgp, *path, a.primaryIP)
+			if err != nil {
+				a.logger.Error("error in adding prefix to BGP", err)
+				continue
+			}
 		}
+
 		a.logger.Info("added prefix to BGP: ", prefix.Cidr)
 	}
 
@@ -570,11 +575,12 @@ func (a *application) DeleteBGPPeer(w http.ResponseWriter, r *http.Request) {
 	// check if the BGP Peer already exists
 	for key, bgpPeer := range privateVIF.BGPPeers {
 		if bgpPeer.CustomerAddress == req.CustomerAddress {
-			// Delete the BGP Peer
-			a.logger.Info("deleting BGP peer ", bgpPeer.BGPPeerID)
-			err = bgp.DeleteBGPPeer(a.serverBgp, bgpPeer.ASN, net.ParseIP(bgpPeer.CustomerAddress))
-			if err != nil {
-				a.logger.Error("error in deleting BGP peer ", err)
+			if a.createBGP {
+				a.logger.Info("deleting BGP peer ", bgpPeer.BGPPeerID)
+				err = bgp.DeleteBGPPeer(a.serverBgp, bgpPeer.ASN, net.ParseIP(bgpPeer.CustomerAddress))
+				if err != nil {
+					a.logger.Error("error in deleting BGP peer ", err)
+				}
 			}
 			// Update the BGP Peer
 			privateVIF.BGPPeers[key].BGPPeerState = "deleted"
