@@ -70,7 +70,7 @@ func main() {
 		localBgpAsn: localBgpAsn,
 	}
 
-	a.logger.Info("the value of createBgpNeighbor is ", createBgpNeighbor)
+	a.logger.Info("create BGP Service is ", createBgpNeighbor)
 	if a.createBGP {
 		vifs, err := GetActiveVirtualInterfaces()
 		if err != nil {

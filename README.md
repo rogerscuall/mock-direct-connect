@@ -69,4 +69,10 @@ This like is very useful [AWS Direct API.](https://frichetten.com/blog/aws-api-p
 
 ## BGP Peer
 
-The localhost (host where the mock is running) will run BGP with ASN 65001, the IP address would be the primary IP address of the main interface, the mock will auto-discovery this IP. You should see the log similar to this: `2023/07/13 17:22:50 BGP Peer: 1.2.3.4`
+The localhost (host where the mock is running) will run BGP with ASN 65001, the IP address would be the primary IP address of the main interface, the mock will auto-discovery this IP. You should see the log similar to this:
+
+```CLI
+INFO: 2023/06/25 11:22:11 logger.go:51: create BGP service is true
+INFO: 2023/06/25 11:22:11 logger.go:51: creating BGP service
+INFO: 2023/06/25 11:22:11 logger.go:51: primary IP address is 192.168.1.100
+```
