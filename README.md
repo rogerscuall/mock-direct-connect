@@ -32,7 +32,7 @@ Download the binary from the [release page](https://github.com/rogerscuall/mock-
 ## How to use it
 
 1. For testing purposes download the repo and move to the `mock-direct-connect` directory.
-1. Download the binary from the [release page](https://github.com/rogerscuall/mock-direct-connect/releases) to the current directory.
+1. For testing with Terraform:
 
 ```bash
 # Start the mock
@@ -43,6 +43,17 @@ cd examples/terraform-aws-direct-connect
 # Run Terraform
 terraform init
 terraform apply
+```
+
+1. For testing with Python:
+
+```bash
+# Start the mock
+./mock-direct-connect
+# Run Python in another terminal
+# Move to the python directory
+cd examples/python
+python3 main.py
 ```
 
 ## Relevant links
@@ -56,9 +67,6 @@ This like is very useful [AWS Direct API.](https://frichetten.com/blog/aws-api-p
 * The header `X-Amz-Target` is used to determine action to perform. The header has value like this: `OvertureService.CreateConnection` this correspond CreateConnection action. In other words this is a substitute the the Action in the query string.
 * The header `Content-Type` is used to determine the format of the request body. The header has value like this: `application/x-amz-json-1.1`.
 
-## Preview features
+## BGP Peer
 
-### BGP Peer
-
-To use this feature create the ENVAR `export CREATE_BGP_NEIGHBOR=true` before running the mock.
-When `CREATE_BGP_NEIGHBOR==true` the localhost (host where the mock is running) will run BGP with ASN 65001, the IP address would be the primary IP address of the main interface, the mock will auto-discovery this IP. You should see the log similar to this: `2023/07/13 17:22:50 BGP Peer: 1.2.3.4`
+The localhost (host where the mock is running) will run BGP with ASN 65001, the IP address would be the primary IP address of the main interface, the mock will auto-discovery this IP. You should see the log similar to this: `2023/07/13 17:22:50 BGP Peer: 1.2.3.4`
