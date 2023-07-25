@@ -23,10 +23,11 @@ confirm:
 run/api:
 	go run ./cmd/api
 
-## db/psql: connect to the database using psql
-.PHONY: db/psql
-db/psql:
-	psql ${GREENLIGHT_DB_DSN}
+## run/api/nobgp: run the cmd/api application without BGP
+.PHONY: run/api/nobgp
+run/api/nobgp:
+	@echo 'Running without BGP...'
+	go run ./cmd/api -enable-bgp=false
 
 ## db/migrations/new name=<VALUE>ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQC6y+7TPzfVoZXmRCFkZTC+oz3gFiGTxrLHGg/Vcn7i6Vvm5aIk8aA2Xfa+XU2zn+y3l+8VaQPXLlfpYPadpLb/0r3owreKBB43cQNyant+yOv4VKcy2c01K6Ralk5WDQ4LwO7/d/NU9Ue/6moiRe/c/Ds1xpJKDqS+TC22gclFoMuuotDeFCybXDWGaz0cKIFxVPFEkrB9538n56IbHeIp/aGj7WDx3c0Z9uYViPN+DVw0ecmLnTMSGM7K72f+DinfioyZr+8IQ8AeYljsn0JOMapAwYeeR6dcnCfMk90FPINs3kJCNNxLh4UHnO4K/TSnQBu3BkNNer0w1gJVpDDh1CCAMq/TDA1Tdxkvm8AN/FprfUdE7GXvxHHUNFEV943syJwKslYz8XUnfz/b7s9e3QqIg6G4La2h/2vL3HwZTmKShQGbeNZg4KNECzxQ+2J6+fw91+vNACmYEGmmzerMKg1Emjz5qcKfJiSWoBOpVe9LhGmmvH5lIz8+tQrhXr8= naruto@rogers-mbp.lan: create a new database migration
 .PHONY: db/migrations/new
