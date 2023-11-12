@@ -1,7 +1,6 @@
 package dx
 
 import (
-	"encoding/json"
 	"net/http"
 )
 
@@ -71,25 +70,4 @@ func CreateDirectConnectGatewayAssociation(r *http.Request) (DirectConnectGatewa
 	dxga.VirtualGatewayRegion = "us-east-1"
 	dxgar.DirectConnectGatewayAssociation = dxga
 	return dxgar, nil
-}
-
-// Implement the Marshaler interface
-func (d DirectConnectGatewayAssociationResponse) MarshalJSON() ([]byte, error) {
-	type Alias DirectConnectGatewayAssociationResponse
-	return json.Marshal(&struct {
-		*Alias
-	}{
-		Alias: (*Alias)(&d),
-	})
-}
-
-// Implement the Unmarshaler interface
-func (d *DirectConnectGatewayAssociationResponse) UnmarshalJSON(b []byte) error {
-	type Alias DirectConnectGatewayAssociationResponse
-	aux := &struct {
-		*Alias
-	}{
-		Alias: (*Alias)(d),
-	}
-	return json.Unmarshal(b, &aux)
 }

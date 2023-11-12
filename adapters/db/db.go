@@ -31,12 +31,12 @@ func (da Adapter) CloseDbConnection() {
 
 // GetVal will update the struct s with the value from the DB
 // It will return an error.
-func (da Adapter) GetVal(key string, s json.Unmarshaler) error {
+func (da Adapter) GetVal(key string, v interface{}) error {
 	val, err := da.db.Get([]byte(key))
 	if err != nil {
 		return err
 	}
-	err = s.UnmarshalJSON(val)
+	err = json.Unmarshal(val, v)
 	if err != nil {
 		return err
 	}
@@ -45,8 +45,8 @@ func (da Adapter) GetVal(key string, s json.Unmarshaler) error {
 
 // SetVal will set the value of the key in the DB
 // It will return an error.
-func (da Adapter) SetVal(key string, s json.Marshaler) error {
-	val, err := s.MarshalJSON()
+func (da Adapter) SetVal(key string, v interface{}) error {
+	val, err := json.Marshal(v)
 	if err != nil {
 		return err
 	}

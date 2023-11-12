@@ -5,7 +5,6 @@ It embeds the NewPrivateVirtualInterface and NewPublicVirtualInterface in the st
 package dx
 
 import (
-	"encoding/json"
 	"fmt"
 	"net/http"
 )
@@ -162,27 +161,6 @@ type CreateTransitVirtualInterfaceRequest struct {
 	NewTransitVirtualInterface NewTransitVirtualInterface `json:"newTransitVirtualInterface"`
 }
 
-// Implementing the Marshaler interface
-func (p PrivateVirtualInterface) MarshalJSON() ([]byte, error) {
-	type Alias PrivateVirtualInterface
-	return json.Marshal(&struct {
-		*Alias
-	}{
-		Alias: (*Alias)(&p),
-	})
-}
-
-// Implementing the Unmarshaler interface
-func (p *PrivateVirtualInterface) UnmarshalJSON(b []byte) error {
-	type Alias PrivateVirtualInterface
-	aux := &struct {
-		*Alias
-	}{
-		Alias: (*Alias)(p),
-	}
-	return json.Unmarshal(b, &aux)
-}
-
 // CreatePrivateVirtualInterface uses the request to create a PrivateVirtualInterface.
 // The interface is available after creation.
 func CreatePrivateVirtualInterface(r *http.Request) (PrivateVirtualInterface, error) {
@@ -209,27 +187,6 @@ func CreatePrivateVirtualInterface(r *http.Request) (PrivateVirtualInterface, er
 	//pvif.VirtualInterfaceName = req.NewPrivateVirtualInterface.VirtualInterfaceName
 
 	return pvif, nil
-}
-
-// Implementing the Marshaler interface
-func (p PublicVirtualInterface) MarshalJSON() ([]byte, error) {
-	type Alias PublicVirtualInterface
-	return json.Marshal(&struct {
-		*Alias
-	}{
-		Alias: (*Alias)(&p),
-	})
-}
-
-// Implementing the Unmarshaler interface
-func (p *PublicVirtualInterface) UnmarshalJSON(b []byte) error {
-	type Alias PublicVirtualInterface
-	aux := &struct {
-		*Alias
-	}{
-		Alias: (*Alias)(p),
-	}
-	return json.Unmarshal(b, &aux)
 }
 
 // CreatePublicVirtualInterface uses the request to create a PublicVirtualInterface.
@@ -283,25 +240,4 @@ func CreateTransitVirtualInterface(r *http.Request) (TransitVirtualInterface, er
 	//pvif.VirtualInterfaceName = req.NewPrivateVirtualInterface.VirtualInterfaceName
 
 	return tvif, nil
-}
-
-// Implementing the Marshaler interface
-func (p TransitVirtualInterface) MarshalJSON() ([]byte, error) {
-	type Alias TransitVirtualInterface
-	return json.Marshal(&struct {
-		*Alias
-	}{
-		Alias: (*Alias)(&p),
-	})
-}
-
-// Implementing the Unmarshaler interface
-func (p *TransitVirtualInterface) UnmarshalJSON(b []byte) error {
-	type Alias TransitVirtualInterface
-	aux := &struct {
-		*Alias
-	}{
-		Alias: (*Alias)(p),
-	}
-	return json.Unmarshal(b, &aux)
 }

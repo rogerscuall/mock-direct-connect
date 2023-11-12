@@ -59,27 +59,6 @@ type NewBGPPeer struct {
 // 	CustomerAddress    string `json:"customerAddress"`
 // }
 
-// // Implementing the Marshaler interface
-// func (b BgpPeer) MarshalJSON() ([]byte, error) {
-// 	type Alias BgpPeer
-// 	return json.Marshal(&struct {
-// 		*Alias
-// 	}{
-// 		Alias: (*Alias)(&b),
-// 	})
-// }
-
-// // Implementing the Unmarshaler interface
-// func (b *BgpPeer) UnmarshalJSON(data []byte) error {
-// 	type Alias BgpPeer
-// 	aux := &struct {
-// 		*Alias
-// 	}{
-// 		Alias: (*Alias)(b),
-// 	}
-// 	return json.Unmarshal(data, &aux)
-// }
-
 // // CreateBgpPeer creates a BGP Peer
 // // Takes a request and return a BGPPeer and an error
 // // It is just a helper to parse the request inside the handler for CreateBgpPeer.

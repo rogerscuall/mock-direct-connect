@@ -1,7 +1,6 @@
 package dx
 
 import (
-	"encoding/json"
 	"net/http"
 )
 
@@ -43,27 +42,6 @@ type Connection struct {
 	Region               string             `json:"region"`
 	Tags                 []DirectConnectTag `json:"tags"`
 	Vlan                 int                `json:"vlan"`
-}
-
-// Implementing the Marshaler interface
-func (c Connection) MarshalJSON() ([]byte, error) {
-	type Alias Connection
-	return json.Marshal(&struct {
-		*Alias
-	}{
-		Alias: (*Alias)(&c),
-	})
-}
-
-// Implementing the Unmarshaler interface
-func (c *Connection) UnmarshalJSON(b []byte) error {
-	type Alias Connection
-	aux := &struct {
-		*Alias
-	}{
-		Alias: (*Alias)(c),
-	}
-	return json.Unmarshal(b, &aux)
 }
 
 // DirectConnectKey is the key for MACSec used by CreateConnectionResponse

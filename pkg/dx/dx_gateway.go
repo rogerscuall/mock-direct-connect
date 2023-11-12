@@ -1,7 +1,6 @@
 package dx
 
 import (
-	"encoding/json"
 	"net/http"
 	"strings"
 )
@@ -41,27 +40,6 @@ type UpdateDXGatewayRequest struct {
 // DeleteDXGatewayRequest is the request body for DeleteDXGateway
 type DeleteDXGatewayRequest struct {
 	DirectConnectGatewayId string `json:"directConnectGatewayId"`
-}
-
-// Implement the Marshaler interface
-func (g DXGateway) MarshalJSON() ([]byte, error) {
-	type Alias DXGateway
-	return json.Marshal(&struct {
-		*Alias
-	}{
-		Alias: (*Alias)(&g),
-	})
-}
-
-// Implement the Unmarshaler interface
-func (g *DXGateway) UnmarshalJSON(b []byte) error {
-	type Alias DXGateway
-	aux := &struct {
-		*Alias
-	}{
-		Alias: (*Alias)(g),
-	}
-	return json.Unmarshal(b, &aux)
 }
 
 // CreateDXGateway creates a new DXGateway from the request body
