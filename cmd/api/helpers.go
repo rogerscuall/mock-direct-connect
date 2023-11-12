@@ -160,7 +160,7 @@ func (a *application) initBgpConfig(vifs []d.PrivateVirtualInterface) error {
 	return nil
 }
 
-func handleError(w http.ResponseWriter, a *application, err error, message string, code int) {
+func handleError(w http.ResponseWriter, a *application, err error, message string, httpMessage string, code int) {
 	a.logger.Error(message, err)
-	http.Error(w, message, code)
+	http.Error(w, httpMessage, code)
 }

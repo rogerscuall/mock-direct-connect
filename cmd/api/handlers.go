@@ -23,7 +23,7 @@ func (a *application) CreateBGPPeer(w http.ResponseWriter, r *http.Request) {
 
 	vifDB, err := db.NewAdapter(dbNameVIF)
 	if err != nil {
-		handleError(w, a, err, "database Connection failure", http.StatusInternalServerError)
+		handleError(w, a, err, "database Connection failure", "Internal Error", http.StatusInternalServerError)
 		return
 	}
 	defer vifDB.CloseDbConnection()
@@ -32,8 +32,7 @@ func (a *application) CreateBGPPeer(w http.ResponseWriter, r *http.Request) {
 
 	err = vifDB.GetVal(req.VirtualInterfaceID, &privateVIF)
 	if err != nil {
-		a.logger.Info("error in getting virtual interface ID from database", err)
-		http.Error(w, "Internal Error", http.StatusInternalServerError)
+		handleError(w, a, err, "error in getting virtual interface ID from database", "Internal Error", http.StatusInternalServerError)
 		return
 	}
 	// Check if the Virtual Interface is available
@@ -66,7 +65,7 @@ func (a *application) CreateBGPPeer(w http.ResponseWriter, r *http.Request) {
 	// Update the Virtual Interface in the database
 	err = vifDB.SetVal(req.VirtualInterfaceID, privateVIF)
 	if err != nil {
-		handleError(w, a, err, "Database Connection failure", http.StatusInternalServerError)
+		handleError(w, a, err, "database Connection failure", "Internal Error", http.StatusInternalServerError)
 		return
 	}
 
@@ -82,7 +81,7 @@ func (a *application) CreateConnection(w http.ResponseWriter, r *http.Request) {
 	}
 	connectionDB, err := db.NewAdapter(dbNameConnection)
 	if err != nil {
-		handleError(w, a, err, "Database Connection failure", http.StatusInternalServerError)
+		handleError(w, a, err, "database Connection failure", "Internal Error", http.StatusInternalServerError)
 		return
 	}
 	defer connectionDB.CloseDbConnection()
@@ -90,7 +89,7 @@ func (a *application) CreateConnection(w http.ResponseWriter, r *http.Request) {
 
 	err = connectionDB.SetVal(dx.ConnectionId, &dx)
 	if err != nil {
-		handleError(w, a, err, "Database Connection failure", http.StatusInternalServerError)
+		handleError(w, a, err, "database Connection failure", "Internal Error", http.StatusInternalServerError)
 		return
 	}
 
@@ -102,14 +101,14 @@ func (a *application) CreateConnection(w http.ResponseWriter, r *http.Request) {
 
 	tagDB, err := db.NewAdapter(dbNameTags)
 	if err != nil {
-		handleError(w, a, err, "Database Connection failure", http.StatusInternalServerError)
+		handleError(w, a, err, "database Connection failure", "Internal Error", http.StatusInternalServerError)
 		return
 	}
 	defer tagDB.CloseDbConnection()
 
 	err = tagDB.SetVal(dx.ConnectionId, resourceTag)
 	if err != nil {
-		handleError(w, a, err, "Database Connection failure", http.StatusInternalServerError)
+		handleError(w, a, err, "database Connection failure", "Internal Error", http.StatusInternalServerError)
 		return
 	}
 
@@ -128,14 +127,14 @@ func (a *application) CreateDXGateway(w http.ResponseWriter, r *http.Request) {
 
 	dxgwDB, err := db.NewAdapter(dbNameDXGwy)
 	if err != nil {
-		handleError(w, a, err, "Database Connection failure", http.StatusInternalServerError)
+		handleError(w, a, err, "database Connection failure", "Internal Error", http.StatusInternalServerError)
 		return
 	}
 	defer dxgwDB.CloseDbConnection()
 
 	err = dxgwDB.SetVal(g.DirectConnectGatewayId, g)
 	if err != nil {
-		handleError(w, a, err, "Database Connection failure", http.StatusInternalServerError)
+		handleError(w, a, err, "database Connection failure", "Internal Error", http.StatusInternalServerError)
 		return
 	}
 
@@ -157,7 +156,7 @@ func (a *application) CreateDirectConnectGatewayAssociation(w http.ResponseWrite
 	}
 	dxGwDBAssociation, err := db.NewAdapter(dbNameDXGWyAssociation)
 	if err != nil {
-		handleError(w, a, err, "Database Connection failure", http.StatusInternalServerError)
+		handleError(w, a, err, "database Connection failure", "Internal Error", http.StatusInternalServerError)
 		return
 	}
 
@@ -198,14 +197,14 @@ func (a *application) CreatePrivateVirtualInterface(w http.ResponseWriter, r *ht
 
 	vifDB, err := db.NewAdapter(dbNameVIF)
 	if err != nil {
-		handleError(w, a, err, "Database Connection failure", http.StatusInternalServerError)
+		handleError(w, a, err, "database Connection failure", "Internal Error", http.StatusInternalServerError)
 		return
 	}
 	defer vifDB.CloseDbConnection()
 
 	err = vifDB.SetVal(vif.VirtualInterfaceID, vif)
 	if err != nil {
-		handleError(w, a, err, "Database Connection failure", http.StatusInternalServerError)
+		handleError(w, a, err, "database Connection failure", "Internal Error", http.StatusInternalServerError)
 		return
 	}
 
@@ -217,14 +216,14 @@ func (a *application) CreatePrivateVirtualInterface(w http.ResponseWriter, r *ht
 
 	tagDB, err := db.NewAdapter(dbNameTags)
 	if err != nil {
-		handleError(w, a, err, "Database Connection failure", http.StatusInternalServerError)
+		handleError(w, a, err, "database Connection failure", "Internal Error", http.StatusInternalServerError)
 		return
 	}
 	defer tagDB.CloseDbConnection()
 
 	err = tagDB.SetVal(vif.VirtualInterfaceID, resourceTag)
 	if err != nil {
-		handleError(w, a, err, "Database Connection failure", http.StatusInternalServerError)
+		handleError(w, a, err, "database Connection failure", "Internal Error", http.StatusInternalServerError)
 		return
 	}
 
@@ -241,14 +240,14 @@ func (a *application) CreatePublicVirtualInterface(w http.ResponseWriter, r *htt
 
 	vifDB, err := db.NewAdapter(dbNameVIF)
 	if err != nil {
-		handleError(w, a, err, "Database Connection failure", http.StatusInternalServerError)
+		handleError(w, a, err, "database Connection failure", "Internal Error", http.StatusInternalServerError)
 		return
 	}
 	defer vifDB.CloseDbConnection()
 
 	err = vifDB.SetVal(vif.VirtualInterfaceID, vif)
 	if err != nil {
-		handleError(w, a, err, "Database Connection failure", http.StatusInternalServerError)
+		handleError(w, a, err, "database Connection failure", "Internal Error", http.StatusInternalServerError)
 		return
 	}
 
@@ -260,20 +259,21 @@ func (a *application) CreatePublicVirtualInterface(w http.ResponseWriter, r *htt
 
 	tagDB, err := db.NewAdapter(dbNameTags)
 	if err != nil {
-		handleError(w, a, err, "Database Connection failure", http.StatusInternalServerError)
+		handleError(w, a, err, "database Connection failure", "Internal Error", http.StatusInternalServerError)
 		return
 	}
 	defer tagDB.CloseDbConnection()
 
 	err = tagDB.SetVal(vif.VirtualInterfaceID, resourceTag)
 	if err != nil {
-		handleError(w, a, err, "Database Connection failure", http.StatusInternalServerError)
+		handleError(w, a, err, "database Connection failure", "Internal Error", http.StatusInternalServerError)
 		return
 	}
 
 	returnOk(w, vif)
 }
 
+// CreateTransitVirtualInterface creates a transit virtual interface.
 func (a *application) CreateTransitVirtualInterface(w http.ResponseWriter, r *http.Request) {
 	vif, err := d.CreateTransitVirtualInterface(r)
 	if err != nil {
@@ -283,14 +283,14 @@ func (a *application) CreateTransitVirtualInterface(w http.ResponseWriter, r *ht
 
 	vifDB, err := db.NewAdapter(dbNameVIF)
 	if err != nil {
-		handleError(w, a, err, "Database Connection failure", http.StatusInternalServerError)
+		handleError(w, a, err, "database Connection failure", "Internal Error", http.StatusInternalServerError)
 		return
 	}
 	defer vifDB.CloseDbConnection()
 
 	err = vifDB.SetVal(vif.VirtualInterfaceID, vif)
 	if err != nil {
-		handleError(w, a, err, "Database Connection failure", http.StatusInternalServerError)
+		handleError(w, a, err, "database Connection failure", "Internal Error", http.StatusInternalServerError)
 		return
 	}
 
@@ -302,14 +302,14 @@ func (a *application) CreateTransitVirtualInterface(w http.ResponseWriter, r *ht
 
 	tagDB, err := db.NewAdapter(dbNameTags)
 	if err != nil {
-		handleError(w, a, err, "Database Connection failure", http.StatusInternalServerError)
+		handleError(w, a, err, "database Connection failure", "Internal Error", http.StatusInternalServerError)
 		return
 	}
 	defer tagDB.CloseDbConnection()
 
 	err = tagDB.SetVal(vif.VirtualInterfaceID, resourceTag)
 	if err != nil {
-		handleError(w, a, err, "Database Connection failure", http.StatusInternalServerError)
+		handleError(w, a, err, "database Connection failure", "Internal Error", http.StatusInternalServerError)
 		return
 	}
 	response := struct {
@@ -327,7 +327,7 @@ func (a *application) DescribeConnections(w http.ResponseWriter, r *http.Request
 	}
 	connectionDB, err := db.NewAdapter(dbNameConnection)
 	if err != nil {
-		handleError(w, a, err, "Database Connection failure", http.StatusInternalServerError)
+		handleError(w, a, err, "database Connection failure", "Internal Error", http.StatusInternalServerError)
 		return
 	}
 	defer connectionDB.CloseDbConnection()
@@ -366,7 +366,7 @@ func (a *application) DescribeDirectConnectGatewayAssociations(w http.ResponseWr
 
 	dxgwDB, err := db.NewAdapter(dbNameDXGWyAssociation)
 	if err != nil {
-		handleError(w, a, err, "Database Connection failure", http.StatusInternalServerError)
+		handleError(w, a, err, "database Connection failure", "Internal Error", http.StatusInternalServerError)
 		return
 	}
 
@@ -422,7 +422,7 @@ func (a *application) DescribeVirtualInterfaces(w http.ResponseWriter, r *http.R
 
 	vifDB, err := db.NewAdapter(dbNameVIF)
 	if err != nil {
-		handleError(w, a, err, "Database Connection failure", http.StatusInternalServerError)
+		handleError(w, a, err, "database Connection failure", "Internal Error", http.StatusInternalServerError)
 		return
 	}
 	defer vifDB.CloseDbConnection()
@@ -431,8 +431,7 @@ func (a *application) DescribeVirtualInterfaces(w http.ResponseWriter, r *http.R
 
 	err = vifDB.GetVal(req.VirtualInterfaceID, &privateVIF)
 	if err != nil {
-		a.logger.Info("error in getting virtual interface ID from database", err)
-		http.Error(w, "Internal Error", http.StatusInternalServerError)
+		handleError(w, a, err, "error in getting virtual interface ID from database", "Internal Error", http.StatusInternalServerError)
 		return
 	}
 
@@ -453,7 +452,7 @@ func (a *application) DescribeTags(w http.ResponseWriter, r *http.Request) {
 
 	connectionDB, err := db.NewAdapter(dbNameTags)
 	if err != nil {
-		handleError(w, a, err, "Database Connection failure", http.StatusInternalServerError)
+		handleError(w, a, err, "database Connection failure", "Internal Error", http.StatusInternalServerError)
 		return
 	}
 	defer connectionDB.CloseDbConnection()
@@ -491,7 +490,7 @@ func (a *application) DescribeDXGateways(w http.ResponseWriter, r *http.Request)
 
 	dxgwDB, err := db.NewAdapter(dbNameDXGwy)
 	if err != nil {
-		handleError(w, a, err, "Database Connection failure", http.StatusInternalServerError)
+		handleError(w, a, err, "database Connection failure", "Internal Error", http.StatusInternalServerError)
 		return
 	}
 	defer dxgwDB.CloseDbConnection()
@@ -541,8 +540,7 @@ func (a *application) DeleteBGPPeer(w http.ResponseWriter, r *http.Request) {
 
 	err = vifDB.GetVal(req.VirtualInterfaceID, &privateVIF)
 	if err != nil {
-		a.logger.Info("error in getting virtual interface ID from database", err)
-		http.Error(w, "Internal Error", http.StatusInternalServerError)
+		handleError(w, a, err, "error in getting virtual interface ID from database", "Internal Error", http.StatusInternalServerError)
 		return
 	}
 
@@ -564,7 +562,7 @@ func (a *application) DeleteBGPPeer(w http.ResponseWriter, r *http.Request) {
 
 	err = vifDB.SetVal(req.VirtualInterfaceID, privateVIF)
 	if err != nil {
-		handleError(w, a, err, "Database Connection failure", http.StatusInternalServerError)
+		handleError(w, a, err, "database Connection failure", "Internal Error", http.StatusInternalServerError)
 		return
 	}
 	returnOk(w, privateVIF)
@@ -583,7 +581,7 @@ func (a *application) DeleteConnections(w http.ResponseWriter, r *http.Request) 
 
 	connectionDB, err := db.NewAdapter(dbNameConnection)
 	if err != nil {
-		handleError(w, a, err, "Database Connection failure", http.StatusInternalServerError)
+		handleError(w, a, err, "database Connection failure", "Internal Error", http.StatusInternalServerError)
 		return
 	}
 	defer connectionDB.CloseDbConnection()
@@ -619,7 +617,7 @@ func (a *application) DeleteDXGateway(w http.ResponseWriter, r *http.Request) {
 
 	dxgwDB, err := db.NewAdapter(dbNameDXGwy)
 	if err != nil {
-		handleError(w, a, err, "Database Connection failure", http.StatusInternalServerError)
+		handleError(w, a, err, "database Connection failure", "Internal Error", http.StatusInternalServerError)
 		return
 	}
 	defer dxgwDB.CloseDbConnection()
@@ -636,7 +634,7 @@ func (a *application) DeleteDXGateway(w http.ResponseWriter, r *http.Request) {
 
 	err = dxgwDB.SetVal(request.DirectConnectGatewayId, g)
 	if err != nil {
-		handleError(w, a, err, "Database Connection failure", http.StatusInternalServerError)
+		handleError(w, a, err, "database Connection failure", "Internal Error", http.StatusInternalServerError)
 		return
 	}
 
@@ -657,7 +655,7 @@ func (a *application) DeleteDirectConnectGatewayAssociation(w http.ResponseWrite
 	}
 	dxgwDB, err := db.NewAdapter(dbNameDXGWyAssociation)
 	if err != nil {
-		handleError(w, a, err, "Database Connection failure", http.StatusInternalServerError)
+		handleError(w, a, err, "database Connection failure", "Internal Error", http.StatusInternalServerError)
 		return
 	}
 
@@ -692,7 +690,7 @@ func (a *application) DeleteVirtualInterface(w http.ResponseWriter, r *http.Requ
 
 	vifDB, err := db.NewAdapter(dbNameVIF)
 	if err != nil {
-		handleError(w, a, err, "Database Connection failure", http.StatusInternalServerError)
+		handleError(w, a, err, "database Connection failure", "Internal Error", http.StatusInternalServerError)
 		return
 	}
 	defer vifDB.CloseDbConnection()
@@ -700,8 +698,7 @@ func (a *application) DeleteVirtualInterface(w http.ResponseWriter, r *http.Requ
 	var privateVIF d.PrivateVirtualInterface
 	err = vifDB.GetVal(req.VirtualInterfaceID, &privateVIF)
 	if err != nil {
-		a.logger.Info("error in getting virtual interface ID from database", err)
-		http.Error(w, "Internal Error", http.StatusInternalServerError)
+		handleError(w, a, err, "error in getting virtual interface ID from database", "Internal Error", http.StatusInternalServerError)
 		return
 	}
 
@@ -709,7 +706,7 @@ func (a *application) DeleteVirtualInterface(w http.ResponseWriter, r *http.Requ
 
 	err = vifDB.SetVal(req.VirtualInterfaceID, privateVIF)
 	if err != nil {
-		handleError(w, a, err, "Database Connection failure", http.StatusInternalServerError)
+		handleError(w, a, err, "database Connection failure", "Internal Error", http.StatusInternalServerError)
 		return
 	}
 
@@ -726,7 +723,7 @@ func (a *application) TagResource(w http.ResponseWriter, r *http.Request) {
 
 	connectionDB, err := db.NewAdapter(dbNameTags)
 	if err != nil {
-		handleError(w, a, err, "Database Connection failure", http.StatusInternalServerError)
+		handleError(w, a, err, "database Connection failure", "Internal Error", http.StatusInternalServerError)
 		return
 	}
 	defer connectionDB.CloseDbConnection()
@@ -740,7 +737,7 @@ func (a *application) TagResource(w http.ResponseWriter, r *http.Request) {
 
 	err = connectionDB.SetVal(key, resourceTag)
 	if err != nil {
-		handleError(w, a, err, "Database Connection failure", http.StatusInternalServerError)
+		handleError(w, a, err, "database Connection failure", "Internal Error", http.StatusInternalServerError)
 		return
 	}
 
@@ -758,7 +755,7 @@ func (a *application) UpdateDXGateway(w http.ResponseWriter, r *http.Request) {
 
 	dxgwDB, err := db.NewAdapter(dbNameDXGwy)
 	if err != nil {
-		handleError(w, a, err, "Database Connection failure", http.StatusInternalServerError)
+		handleError(w, a, err, "database Connection failure", "Internal Error", http.StatusInternalServerError)
 		return
 	}
 	defer dxgwDB.CloseDbConnection()
@@ -775,7 +772,7 @@ func (a *application) UpdateDXGateway(w http.ResponseWriter, r *http.Request) {
 
 	err = dxgwDB.SetVal(request.DirectConnectGatewayId, g)
 	if err != nil {
-		handleError(w, a, err, "Database Connection failure", http.StatusInternalServerError)
+		handleError(w, a, err, "database Connection failure", "Internal Error", http.StatusInternalServerError)
 		return
 	}
 
